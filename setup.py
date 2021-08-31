@@ -11,7 +11,7 @@ setup(
     author_email='diljot.grewal@gmail.com',
     entry_points={
         'console_scripts': [
-            'mondrian_runner = mondrian_runner.run:main',
+            'mondrian_runner = mondrian_runner.main:main',
         ]
     },
     package_data={'': ['*.py']}
