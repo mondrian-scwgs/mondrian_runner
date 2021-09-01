@@ -16,7 +16,7 @@ def add_global_args(parser):
 
     parser.add_argument(
         "--log_level",
-        required=True,
+        default='INFO',
         help='server url'
     )
     return parser
@@ -66,7 +66,6 @@ def parse_args():
     abort = add_global_args(abort)
     abort.add_argument(
         "--run_id",
-        required=True,
         help='server url'
     )
 
