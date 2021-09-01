@@ -1,7 +1,7 @@
 from mondrian_runner import utils
 
 
-def abort(server_url, tempdir, run_id, logger):
+def abort(server_url, tempdir, run_id):
     if not run_id:
         run_id = utils.get_id_from_tempdir(tempdir)
 

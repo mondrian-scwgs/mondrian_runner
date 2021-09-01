@@ -1,8 +1,8 @@
 import json
 import logging
 import os
-from subprocess import Popen, PIPE
 from functools import wraps
+from subprocess import Popen, PIPE
 
 import time
 
@@ -176,9 +176,9 @@ def run_cmd(cmd):
     return cmdout, cmderr
 
 
-def get_workflow_url(wf_name):
-    wf_url = 'https://raw.githubusercontent.com/mondrian-scwgs/mondrian/main/mondrian/wdl/analyses/{}.wdl'.format(
-        wf_name)
+def get_workflow_url(wf_name, version):
+    wf_url = 'https://raw.githubusercontent.com/mondrian-scwgs/mondrian/{}/mondrian/wdl/analyses/{}.wdl'.format(
+        wf_name, version)
     return wf_url
 
 
@@ -189,7 +189,9 @@ def get_run_id(stdout):
 
 
 @Backoff(max_backoff=900, randomize=True)
-def wait(server_url, run_id, logger, sleep_time=30):
+def wait(server_url, run_id, sleep_time=30):
+    logger = logging.getLogger('mondrian_runner_waiter')
+
     while True:
         time.sleep(sleep_time)
 

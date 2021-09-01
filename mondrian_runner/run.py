@@ -1,8 +1,12 @@
+import logging
+
 import mondrian_runner.utils as utils
 
 
-def submit_pipeline(server_url, pipeline_name, input_json, options_json, logger):
-    wf_url = utils.get_workflow_url(pipeline_name)
+def submit_pipeline(server_url, pipeline_name, input_json, options_json, version):
+    logger = logging.getLogger('mondrian_runner.submit')
+
+    wf_url = utils.get_workflow_url(pipeline_name, version)
 
     cmd = ['curl', '-X', 'POST', '--header', 'Accept: application/json', '-v', '{}/api/workflows/v1'.format(server_url),
            '-F', wf_url,
@@ -21,10 +25,9 @@ def submit_pipeline(server_url, pipeline_name, input_json, options_json, logger)
     return run_id
 
 
-def runner(server_url, pipeline_name, input_json, options_json, outdir, logger):
-
-    run_id = submit_pipeline(server_url, pipeline_name, input_json, options_json, logger)
+def runner(server_url, pipeline_name, input_json, options_json, outdir):
+    run_id = submit_pipeline(server_url, pipeline_name, input_json, options_json)
 
     utils.cache_run_id(run_id, outdir)
 
-    utils.wait(server_url, run_id, logger)
+    utils.wait(server_url, run_id)
