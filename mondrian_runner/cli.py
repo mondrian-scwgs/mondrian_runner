@@ -63,7 +63,7 @@ def parse_args():
 
     abort = subparsers.add_parser("abort")
     abort.set_defaults(which='abort')
-    abort = add_global_args(reattach)
+    abort = add_global_args(abort)
     abort.add_argument(
         "--run_id",
         required=True,
