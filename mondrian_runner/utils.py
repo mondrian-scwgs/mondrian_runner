@@ -5,6 +5,7 @@ from functools import wraps
 from subprocess import Popen, PIPE
 
 import time
+import errno
 
 
 class Backoff(object):
@@ -215,3 +216,15 @@ def wait(server_url, run_id, sleep_time=30):
 
         if status not in ['running', 'submitted']:
             break
+
+def makedirs(directory):
+    """
+    make a dir if it doesnt exist
+    :param directory: dir path
+    :type directory: str
+    """
+    try:
+        os.makedirs(directory)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
