@@ -12,7 +12,7 @@ def main():
 
 
     if args["which"] == "run":
-        runner(args['server_url'], args['pipeline_name'], args['input_json'], args['options_json'], args['outdir'])
+        runner(args['server_url'], args['pipeline_name'], args['input_json'], args['options_json'], args['outdir'], args['version'])
         return
 
     if args["which"] == "reattach":

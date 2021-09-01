@@ -25,8 +25,8 @@ def submit_pipeline(server_url, pipeline_name, input_json, options_json, version
     return run_id
 
 
-def runner(server_url, pipeline_name, input_json, options_json, outdir):
-    run_id = submit_pipeline(server_url, pipeline_name, input_json, options_json)
+def runner(server_url, pipeline_name, input_json, options_json, outdir, version):
+    run_id = submit_pipeline(server_url, pipeline_name, input_json, options_json, version)
 
     utils.cache_run_id(run_id, outdir)
 
