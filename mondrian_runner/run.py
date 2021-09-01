@@ -9,7 +9,7 @@ def submit_pipeline(server_url, pipeline_name, input_json, options_json, version
     wf_url = utils.get_workflow_url(pipeline_name, version)
 
     cmd = ['curl', '-X', 'POST', '--header', 'Accept: application/json', '-v', '{}/api/workflows/v1'.format(server_url),
-           '-F', wf_url,
+           '-F', 'workflowUrl={}'.format(wf_url),
            '-F', 'workflowInputs=@{}'.format(input_json),
            '-F', 'workflowOptions=@{}'.format(options_json)
            ]

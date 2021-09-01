@@ -178,7 +178,7 @@ def run_cmd(cmd):
 
 def get_workflow_url(wf_name, version):
     wf_url = 'https://raw.githubusercontent.com/mondrian-scwgs/mondrian/{}/mondrian/wdl/analyses/{}.wdl'.format(
-        wf_name, version)
+        version, wf_name)
     return wf_url
 
 
