@@ -8,7 +8,7 @@ import os
 def main():
     args = parse_args()
 
-    utils.init_logger(os.path.join(args['outdir']))
+    utils.init_logger(os.path.join(args['outdir']), args['log_level'])
 
 
     if args["which"] == "run":
