@@ -8,17 +8,17 @@ import os
 def main():
     args = parse_args()
 
-    utils.init_logger(os.path.join(args['outdir']), args['log_level'])
+    logger = utils.init_logger(os.path.join(args['outdir']), args['log_level'])
 
 
     if args["which"] == "run":
-        runner(args['server_url'], args['pipeline_name'], args['input_json'], args['options_json'], args['outdir'])
+        runner(args['server_url'], args['pipeline_name'], args['input_json'], args['options_json'], args['outdir'], logger)
         return
 
     if args["which"] == "reattach":
-        reattach(args['server_url'], args['outdir'], args['run_id'])
+        reattach(args['server_url'], args['outdir'], args['run_id'], logger)
         return
 
     if args["which"] == "abort":
-        abort(args['server_url'], args['outdir'], args['run_id'])
+        abort(args['server_url'], args['outdir'], args['run_id'], logger)
         return

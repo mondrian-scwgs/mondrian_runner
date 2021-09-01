@@ -21,8 +21,7 @@ def submit_pipeline(server_url, pipeline_name, input_json, options_json, logger)
     return run_id
 
 
-def runner(server_url, pipeline_name, input_json, options_json, outdir):
-    logger = utils.init_logger(outdir)
+def runner(server_url, pipeline_name, input_json, options_json, outdir, logger):
 
     run_id = submit_pipeline(server_url, pipeline_name, input_json, options_json, logger)
 
