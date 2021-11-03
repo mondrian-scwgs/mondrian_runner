@@ -15,8 +15,8 @@ def main():
     utils.init_logger(os.path.join(args['outdir']), args['log_level'])
 
     if args["which"] == "run":
-        runner(args['server_url'], args['pipeline_name'], args['input_json'], args['options_json'], args['outdir'],
-               args['version'])
+        runner(args['server_url'], args['wdl_file'], args['input_json'], args['options_json'], args['outdir'],
+               args['imports'])
         return
 
     if args["which"] == "reattach":

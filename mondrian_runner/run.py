@@ -3,16 +3,19 @@ import logging
 import mondrian_runner.utils as utils
 
 
-def submit_pipeline(server_url, pipeline_name, input_json, options_json, version):
+def submit_pipeline(server_url, wdl_file, input_json, options_json, imports):
     logger = logging.getLogger('mondrian_runner.submit')
 
-    wf_url = utils.get_workflow_url(pipeline_name, version)
-
-    cmd = ['curl', '-X', 'POST', '--header', 'Accept: application/json', '-v', '{}/api/workflows/v1'.format(server_url),
-           '-F', 'workflowUrl={}'.format(wf_url),
-           '-F', 'workflowInputs=@{}'.format(input_json),
-           '-F', 'workflowOptions=@{}'.format(options_json)
-           ]
+    cmd = [
+        'curl',
+        '-X', 'POST',
+        '--header', 'Accept: application/json',
+        '-v', '{}/api/workflows/v1'.format(server_url),
+        '-F', 'workflowSource=@{}'.format(wdl_file),
+        '-F', 'workflowInputs=@{}'.format(input_json),
+        '-F', 'workflowOptions=@{}'.format(options_json),
+        '-F', 'workflowDependencies=@{}'.format(imports)
+    ]
 
     logger.info('running: {}'.format(' '.join(cmd)))
 
@@ -25,8 +28,8 @@ def submit_pipeline(server_url, pipeline_name, input_json, options_json, version
     return run_id
 
 
-def runner(server_url, pipeline_name, input_json, options_json, outdir, version):
-    run_id = submit_pipeline(server_url, pipeline_name, input_json, options_json, version)
+def runner(server_url, wdl_file, input_json, options_json, outdir, imports):
+    run_id = submit_pipeline(server_url, wdl_file, input_json, options_json, imports)
 
     utils.cache_run_id(run_id, outdir)
 

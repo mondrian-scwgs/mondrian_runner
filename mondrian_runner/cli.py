@@ -33,7 +33,7 @@ def parse_args():
     run.set_defaults(which='run')
     run = add_global_args(run)
     run.add_argument(
-        "--pipeline_name",
+        "--wdl_file",
         required=True,
         help='server url'
     )
@@ -48,7 +48,7 @@ def parse_args():
         help='server url'
     )
     run.add_argument(
-        "--version",
+        "--imports",
         required=True,
         help='server url'
     )
