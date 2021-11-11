@@ -52,6 +52,12 @@ def parse_args():
         required=True,
         help='server url'
     )
+    run.add_argument(
+        "--workflow_log_dir",
+        required=True,
+        help='server url'
+    )
+
 
     reattach = subparsers.add_parser("reattach")
     reattach.set_defaults(which='reattach')

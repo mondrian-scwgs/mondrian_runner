@@ -6,7 +6,7 @@ from subprocess import Popen, PIPE
 
 import time
 import errno
-
+import random
 
 class Backoff(object):
     """
@@ -190,8 +190,11 @@ def get_run_id(stdout):
 
 
 @Backoff(max_backoff=900, randomize=True)
-def wait(server_url, run_id, sleep_time=30):
+def wait(server_url, run_id, log_file, sleep_time=30):
     logger = logging.getLogger('mondrian_runner_waiter')
+
+    print(log_file)
+    follow_log = follow(open(log_file, 'rt'))
 
     while True:
         time.sleep(sleep_time)
@@ -214,8 +217,13 @@ def wait(server_url, run_id, sleep_time=30):
 
         logger.info('pipeline {} is {}'.format(run_id, status))
 
+        print("follow")
+        for line in follow_log:
+            logger.info(line)
+
         if status not in ['running', 'submitted']:
             break
+
 
 def makedirs(directory):
     """
@@ -228,3 +236,21 @@ def makedirs(directory):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
+
+def follow(thefile):
+    '''generator function that yields new lines in a file
+    '''
+    # seek the end of the file
+    thefile.seek(0, os.SEEK_END)
+
+    # start infinite loop
+    while True:
+        # read last line of file
+        line = thefile.readline()
+        # sleep if file hasn't been updated
+        if not line:
+            time.sleep(0.1)
+            continue
+
+        yield line
