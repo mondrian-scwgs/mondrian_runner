@@ -193,7 +193,6 @@ def get_run_id(stdout):
 def wait(server_url, run_id, log_file, sleep_time=30):
     logger = logging.getLogger('mondrian_runner_waiter')
 
-    print(log_file)
     follow_log = follow(open(log_file, 'rt'))
 
     while True:
@@ -217,12 +216,14 @@ def wait(server_url, run_id, log_file, sleep_time=30):
 
         logger.info('pipeline {} is {}'.format(run_id, status))
 
-        print("follow")
-        for line in follow_log:
-            logger.info(line)
 
         if status not in ['running', 'submitted']:
             break
+
+        if os.path.exists(log_file):
+            for line in follow_log:
+                logger.info(line)
+
 
 
 def makedirs(directory):
@@ -254,3 +255,15 @@ def follow(thefile):
             continue
 
         yield line
+<<<<<<< Updated upstream
+=======
+
+
+
+def load_options_json(options_json):
+    data = json.load(open(options_json, 'rt'))
+
+    return {
+        'wf_logs': data['final_workflow_log_dir']
+    }
+>>>>>>> Stashed changes
