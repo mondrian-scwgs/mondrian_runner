@@ -194,10 +194,15 @@ def get_run_id(stdout):
 def wait(server_url, run_id, log_file, sleep_time=30):
     logger = logging.getLogger('mondrian_runner_waiter')
 
-    follow_log = follow(open(log_file, 'rt'))
+    follow_log = None
 
     while True:
         time.sleep(sleep_time)
+
+        if follow_log is None and os.path.exists(log_file):
+            follow_log = follow(open(log_file, 'rt'))
+
+
 
         cmd = ['curl', '-X', 'GET', "http://{}/api/workflows/v1/query?id={}".format(server_url, run_id)]
 
@@ -220,7 +225,7 @@ def wait(server_url, run_id, log_file, sleep_time=30):
         if status not in ['running', 'submitted']:
             break
 
-        if os.path.exists(log_file):
+        if follow_log is not None and os.path.exists(log_file):
             for line in follow_log:
                 logger.info(line)
 
