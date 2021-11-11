@@ -31,12 +31,10 @@ def submit_pipeline(server_url, wdl_file, input_json, options_json, imports):
 def runner(server_url, pipeline_name, input_json, options_json, outdir, version, workflow_log_dir):
     run_id = submit_pipeline(server_url, pipeline_name, input_json, options_json, version)
 
-    final_wf_logs = utils.load_options_json(options_json)
-
-    final_wf_logs = os.path.join(final_wf_logs["wf_logs"], 'workflow.{}.log'.format(run_id))
-
     utils.cache_run_id(run_id, outdir)
 
     logfile = os.path.join(workflow_log_dir, 'workflow.{}.log'.format(run_id))
 
-    utils.wait(server_url, run_id, logfile)
+    status = utils.wait(server_url, run_id, logfile)
+
+    raise Exception(status)

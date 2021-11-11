@@ -190,44 +190,45 @@ def get_run_id(stdout):
     return run_id
 
 
+def check_status(server_url, run_id, logger):
+    cmd = ['curl', '-X', 'GET', "http://{}/api/workflows/v1/query?id={}".format(server_url, run_id)]
+
+    cmdout, cmderr = run_cmd(cmd)
+
+    cmdout = json.loads(cmdout)
+
+    if 'results' not in cmdout:
+        logger.warning(f'expected results in response, received {cmdout}')
+        return
+
+    if not len(cmdout['results']) == 1:
+        logger.warning('expected 1 result. {}'.format(cmdout['results']))
+        return
+
+    status = cmdout['results'][0]['status'].lower()
+
+    logger.info('pipeline {} is {}'.format(run_id, status))
+
+
 @Backoff(max_backoff=900, randomize=True)
 def wait(server_url, run_id, log_file, sleep_time=30):
     logger = logging.getLogger('mondrian_runner_waiter')
 
-    follow_log = None
-
     while True:
         time.sleep(sleep_time)
 
-        if follow_log is None and os.path.exists(log_file):
-            follow_log = follow(open(log_file, 'rt'))
+        if os.path.exists(log_file):
+            follow_log = follow(
+                log_file, server_url, run_id, logger
+            )
+            for line in follow_log:
+                logger.info(line)
 
-
-
-        cmd = ['curl', '-X', 'GET', "http://{}/api/workflows/v1/query?id={}".format(server_url, run_id)]
-
-        cmdout, cmderr = run_cmd(cmd)
-
-        cmdout = json.loads(cmdout)
-
-        if 'results' not in cmdout:
-            logger.warning(f'expected results in response, received {cmdout}')
-            continue
-
-        if not len(cmdout['results']) == 1:
-            logger.warning('expected 1 result. {}'.format(cmdout['results']))
-            continue
-
-        status = cmdout['results'][0]['status'].lower()
-
-        logger.info('pipeline {} is {}'.format(run_id, status))
-
+        status = check_status(server_url, run_id, logger)
         if status not in ['running', 'submitted']:
             break
 
-        if follow_log is not None and os.path.exists(log_file):
-            for line in follow_log:
-                logger.info(line)
+    return check_status(server_url, run_id, logger)
 
 
 def makedirs(directory):
@@ -243,18 +244,24 @@ def makedirs(directory):
             raise
 
 
-def follow(thefile):
-    '''generator function that yields new lines in a file
+def follow(logfile, server_url, run_id, logger):
     '''
-    # seek the end of the file
-    thefile.seek(0, os.SEEK_END)
+    generator function that yields new lines in a file
+    '''
 
-    # start infinite loop
+    logreader = open(logfile, 'rt')
+
+    logreader.seek(0, os.SEEK_END)
     while True:
-        # read last line of file
-        line = thefile.readline()
-        # sleep if file hasn't been updated
+
+        if not os.path.exists(logfile):
+            break
+
+        line = logreader.readline()
         if not line:
+            status = check_status(server_url, run_id, logger)
+            if status not in ['running', 'submitted']:
+                break
             time.sleep(0.1)
             continue
 
