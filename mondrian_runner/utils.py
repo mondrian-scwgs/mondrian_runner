@@ -191,24 +191,33 @@ def get_run_id(stdout):
 
 
 def check_status(server_url, run_id, logger):
-    cmd = ['curl', '-X', 'GET', "http://{}/api/workflows/v1/query?id={}".format(server_url, run_id)]
 
-    cmdout, cmderr = run_cmd(cmd)
+    i = 0
+    while i<5:
 
-    cmdout = json.loads(cmdout)
+        cmd = ['curl', '-X', 'GET', "http://{}/api/workflows/v1/query?id={}".format(server_url, run_id)]
 
-    if 'results' not in cmdout:
-        logger.warning(f'expected results in response, received {cmdout}')
-        return
+        cmdout, cmderr = run_cmd(cmd)
 
-    if not len(cmdout['results']) == 1:
-        logger.warning('expected 1 result. {}'.format(cmdout['results']))
-        return
+        cmdout = json.loads(cmdout)
 
-    status = cmdout['results'][0]['status'].lower()
+        if 'results' not in cmdout:
+            logger.warning(f'expected results in response, received {cmdout}')
+            i+=1
+            time.sleep(20)
+            continue
 
-    logger.info('pipeline {} is {}'.format(run_id, status))
+        if not len(cmdout['results']) == 1:
+            logger.warning('expected 1 result. {}'.format(cmdout['results']))
+            i+=1
+            time.sleep(20)
+            continue
 
+        status = cmdout['results'][0]['status'].lower()
+
+        logger.info('pipeline {} is {}'.format(run_id, status))
+
+        return status
 
 @Backoff(max_backoff=900, randomize=True)
 def wait(server_url, run_id, log_file, sleep_time=30):
