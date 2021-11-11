@@ -37,4 +37,5 @@ def runner(server_url, pipeline_name, input_json, options_json, outdir, version,
 
     status = utils.wait(server_url, run_id, logfile)
 
-    raise Exception(status)
+    if not status == 'succeeded':
+        raise Exception('pipeline fail, status: {}'.format(status))
