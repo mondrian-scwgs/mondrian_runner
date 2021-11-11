@@ -1,12 +1,13 @@
+import errno
 import json
 import logging
 import os
+import random
 from functools import wraps
 from subprocess import Popen, PIPE
 
 import time
-import errno
-import random
+
 
 class Backoff(object):
     """
@@ -216,14 +217,12 @@ def wait(server_url, run_id, log_file, sleep_time=30):
 
         logger.info('pipeline {} is {}'.format(run_id, status))
 
-
         if status not in ['running', 'submitted']:
             break
 
         if os.path.exists(log_file):
             for line in follow_log:
                 logger.info(line)
-
 
 
 def makedirs(directory):
@@ -255,9 +254,6 @@ def follow(thefile):
             continue
 
         yield line
-<<<<<<< Updated upstream
-=======
-
 
 
 def load_options_json(options_json):
@@ -266,4 +262,3 @@ def load_options_json(options_json):
     return {
         'wf_logs': data['final_workflow_log_dir']
     }
->>>>>>> Stashed changes
