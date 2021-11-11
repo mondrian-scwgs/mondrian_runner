@@ -215,8 +215,6 @@ def check_status(server_url, run_id, logger):
 
         status = cmdout['results'][0]['status'].lower()
 
-        logger.info('pipeline {} is {}'.format(run_id, status))
-
         return status
 
 @Backoff(max_backoff=900, randomize=True)
@@ -253,7 +251,7 @@ def makedirs(directory):
             raise
 
 
-def follow(logfile, server_url, run_id, logger):
+def follow(logfile, server_url, run_id, logger, sleep_time=10):
     '''
     generator function that yields new lines in a file
     '''
@@ -271,7 +269,7 @@ def follow(logfile, server_url, run_id, logger):
             status = check_status(server_url, run_id, logger)
             if status not in ['running', 'submitted']:
                 break
-            time.sleep(0.1)
+            time.sleep(sleep_time)
             continue
 
         yield line
