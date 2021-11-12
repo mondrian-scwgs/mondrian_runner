@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 
 import mondrian_runner.utils as utils
 
@@ -30,7 +29,7 @@ def submit_pipeline(server_url, wdl_file, input_json, options_json, imports):
     return run_id
 
 
-def runner(server_url, pipeline_name, input_json, options_json, outdir, version, workflow_log_dir):
+def runner(server_url, pipeline_name, input_json, options_json, outdir, version, workflow_log_dir, add_metadata=False):
     run_id = submit_pipeline(server_url, pipeline_name, input_json, options_json, version)
 
     utils.cache_run_id(run_id, outdir)
@@ -42,6 +41,6 @@ def runner(server_url, pipeline_name, input_json, options_json, outdir, version,
     if not status == 'succeeded':
         raise Exception('pipeline fail, status: {}'.format(status))
 
-    options_data = utils.load_options_json(options_json)
 
-    shutil.copyfile(input_json, os.path.join(options_data['out_dir'], "input.json"))
+    if add_metadata:
+        utils.add_metadata(options_json, input_json)

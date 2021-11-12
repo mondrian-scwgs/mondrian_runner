@@ -3,10 +3,12 @@ import json
 import logging
 import os
 import random
+import shutil
 from functools import wraps
 from subprocess import Popen, PIPE
 
 import time
+import yaml
 
 
 class Backoff(object):
@@ -191,9 +193,8 @@ def get_run_id(stdout):
 
 
 def check_status(server_url, run_id, logger):
-
     i = 0
-    while i<5:
+    while i < 5:
 
         cmd = ['curl', '-X', 'GET', "http://{}/api/workflows/v1/query?id={}".format(server_url, run_id)]
 
@@ -203,19 +204,20 @@ def check_status(server_url, run_id, logger):
 
         if 'results' not in cmdout:
             logger.warning(f'expected results in response, received {cmdout}')
-            i+=1
+            i += 1
             time.sleep(20)
             continue
 
         if not len(cmdout['results']) == 1:
             logger.warning('expected 1 result. {}'.format(cmdout['results']))
-            i+=1
+            i += 1
             time.sleep(20)
             continue
 
         status = cmdout['results'][0]['status'].lower()
 
         return status
+
 
 @Backoff(max_backoff=900, randomize=True)
 def wait(server_url, run_id, log_file, sleep_time=30):
@@ -282,3 +284,51 @@ def load_options_json(options_json):
         'wf_logs': data['final_workflow_log_dir'],
         'out_dir': data['final_workflow_outputs_dir'],
     }
+
+
+def extract_version(wdl_file):
+    with open(wdl_file, 'rt') as wdl_reader:
+        assert wdl_reader.readline().startswith("version")
+
+        pipeline_version = wdl_reader.readline()
+
+        if pipeline_version.startswith("#mondrian version:"):
+            pipeline_version = pipeline_version.strip().split(':')
+            pipeline_version = pipeline_version[1]
+            return pipeline_version
+        else:
+            return None
+
+
+def get_all_outputs(outdir):
+    files = os.listdir(outdir)
+    for file in files:
+        if os.path.isdir(file):
+            raise Exception("dir found in outputdir")
+
+    return files
+
+
+def create_metadata_yaml(outdir, pipeline_wdl, yamlfile):
+    version = extract_version(pipeline_wdl)
+    files = get_all_outputs(outdir)
+
+    data = {
+        'filenames': files,
+        'meta': {
+            'version': version
+        }
+    }
+
+    with open(yamlfile, 'wt') as writer:
+        yaml.dump(data, writer, default_flow_style=False)
+
+
+def add_metadata(options_json, input_json, pipeline_wdl):
+    options_data = load_options_json(options_json)
+
+    out_dir = options_data['out_dir']
+
+    shutil.copyfile(input_json, os.path.join(out_dir, "input.json"))
+
+    create_metadata_yaml(out_dir, pipeline_wdl, os.path.join(out_dir, "metadata.yaml"))
