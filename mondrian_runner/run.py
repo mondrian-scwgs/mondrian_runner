@@ -29,8 +29,8 @@ def submit_pipeline(server_url, wdl_file, input_json, options_json, imports):
     return run_id
 
 
-def runner(server_url, pipeline_name, input_json, options_json, outdir, version, workflow_log_dir, add_metadata=False):
-    run_id = submit_pipeline(server_url, pipeline_name, input_json, options_json, version)
+def runner(server_url, pipeline_wdl, input_json, options_json, outdir, version, workflow_log_dir, add_metadata=False):
+    run_id = submit_pipeline(server_url, pipeline_wdl, input_json, options_json, version)
 
     utils.cache_run_id(run_id, outdir)
 
@@ -41,6 +41,5 @@ def runner(server_url, pipeline_name, input_json, options_json, outdir, version,
     if not status == 'succeeded':
         raise Exception('pipeline fail, status: {}'.format(status))
 
-
     if add_metadata:
-        utils.add_metadata(options_json, input_json)
+        utils.add_metadata(options_json, input_json, pipeline_wdl)
