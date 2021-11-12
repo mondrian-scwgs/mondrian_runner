@@ -57,6 +57,12 @@ def parse_args():
         required=True,
         help='server url'
     )
+    run.add_argument(
+        "--add_metadata",
+        default=False,
+        action='store_true',
+        help='server url'
+    )
 
 
     reattach = subparsers.add_parser("reattach")
