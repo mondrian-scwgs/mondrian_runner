@@ -315,7 +315,7 @@ def create_metadata_yaml(outdir, pipeline_wdl, yamlfile):
     name, version = extract_name_version(pipeline_wdl)
     files = get_all_outputs(outdir)
 
-    mondrian_utils.helpers.validate_outputs(files, name)
+    mondrianutils.helpers.validate_outputs(files, name)
 
 
     data = {
