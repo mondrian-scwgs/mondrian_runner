@@ -1,5 +1,7 @@
 import logging
 import os
+import shutil
+
 import mondrian_runner.utils as utils
 
 
@@ -39,3 +41,7 @@ def runner(server_url, pipeline_name, input_json, options_json, outdir, version,
 
     if not status == 'succeeded':
         raise Exception('pipeline fail, status: {}'.format(status))
+
+    options_data = utils.load_options_json(options_json)
+
+    shutil.copyfile(input_json, options_data['out_dir'])

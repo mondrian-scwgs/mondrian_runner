@@ -279,5 +279,6 @@ def load_options_json(options_json):
     data = json.load(open(options_json, 'rt'))
 
     return {
-        'wf_logs': data['final_workflow_log_dir']
+        'wf_logs': data['final_workflow_log_dir'],
+        'out_dir': data['final_workflow_outputs_dir'],
     }
