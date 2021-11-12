@@ -29,7 +29,10 @@ def submit_pipeline(server_url, wdl_file, input_json, options_json, imports):
     return run_id
 
 
-def runner(server_url, pipeline_wdl, input_json, options_json, outdir, version, workflow_log_dir, add_metadata=False):
+def runner(
+        server_url, pipeline_wdl, input_json, options_json,
+        outdir, version, workflow_log_dir, add_metadata=False
+):
     run_id = submit_pipeline(server_url, pipeline_wdl, input_json, options_json, version)
 
     utils.cache_run_id(run_id, outdir)

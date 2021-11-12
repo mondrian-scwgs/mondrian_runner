@@ -10,6 +10,8 @@ from subprocess import Popen, PIPE
 import time
 import yaml
 
+import mondrianutils.helpers
+
 
 class Backoff(object):
     """
@@ -286,16 +288,17 @@ def load_options_json(options_json):
     }
 
 
-def extract_version(wdl_file):
+def extract_name_version(wdl_file):
     with open(wdl_file, 'rt') as wdl_reader:
         pipeline_version = wdl_reader.readline()
 
-        if pipeline_version.startswith("#mondrian_version"):
-            pipeline_version = pipeline_version.strip().split(' ')
-            pipeline_version = pipeline_version[1]
-            return pipeline_version
+        if pipeline_version.startswith('#{"meta"'):
+            pipeline_version = pipeline_version[1:]
+            pipeline_version = json.loads(pipeline_version)['meta']
+            return pipeline_version['name'], pipeline_version['version']
         else:
-            return None
+            return None, None
+
 
 
 def get_all_outputs(outdir):
@@ -307,14 +310,19 @@ def get_all_outputs(outdir):
     return files
 
 
+
 def create_metadata_yaml(outdir, pipeline_wdl, yamlfile):
-    version = extract_version(pipeline_wdl)
+    name, version = extract_name_version(pipeline_wdl)
     files = get_all_outputs(outdir)
+
+    mondrian_utils.helpers.validate_outputs(files, name)
+
 
     data = {
         'filenames': files,
         'meta': {
-            'version': version
+            'version': version,
+            'name': name
         }
     }
 
