@@ -288,12 +288,10 @@ def load_options_json(options_json):
 
 def extract_version(wdl_file):
     with open(wdl_file, 'rt') as wdl_reader:
-        assert wdl_reader.readline().startswith("version")
-
         pipeline_version = wdl_reader.readline()
 
-        if pipeline_version.startswith("#mondrian version:"):
-            pipeline_version = pipeline_version.strip().split(':')
+        if pipeline_version.startswith("#mondrian_version"):
+            pipeline_version = pipeline_version.strip().split(' ')
             pipeline_version = pipeline_version[1]
             return pipeline_version
         else:
