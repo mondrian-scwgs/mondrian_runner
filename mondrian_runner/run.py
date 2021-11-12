@@ -44,4 +44,4 @@ def runner(server_url, pipeline_name, input_json, options_json, outdir, version,
 
     options_data = utils.load_options_json(options_json)
 
-    shutil.copyfile(input_json, options_data['out_dir'])
+    shutil.copyfile(input_json, os.path.join(options_data['out_dir'], "input.json"))
