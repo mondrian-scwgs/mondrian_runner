@@ -7,10 +7,9 @@ import shutil
 from functools import wraps
 from subprocess import Popen, PIPE
 
+import mondrianutils.helpers
 import time
 import yaml
-
-import mondrianutils.helpers
 
 
 class Backoff(object):
@@ -300,7 +299,6 @@ def extract_name_version(wdl_file):
             return None, None
 
 
-
 def get_all_outputs(outdir):
     files = os.listdir(outdir)
     for file in files:
@@ -309,14 +307,21 @@ def get_all_outputs(outdir):
 
     return files
 
+def get_samples(input_json):
+    data = json.load(open(input_json, 'rt'))
+
+    for key in data:
+        if 'samples' in key:
+            return list(data[key].keys())
+
+    return []
 
 
-def create_metadata_yaml(outdir, pipeline_wdl, yamlfile):
+def create_metadata_yaml(outdir, pipeline_wdl, input_json, yamlfile):
     name, version = extract_name_version(pipeline_wdl)
     files = get_all_outputs(outdir)
 
-    mondrianutils.helpers.validate_outputs(files, name)
-
+    mondrianutils.helpers.validate_outputs(files, name, samples = get_samples(input_json))
 
     data = {
         'filenames': files,
@@ -337,4 +342,4 @@ def add_metadata(options_json, input_json, pipeline_wdl):
 
     shutil.copyfile(input_json, os.path.join(out_dir, "input.json"))
 
-    create_metadata_yaml(out_dir, pipeline_wdl, os.path.join(out_dir, "metadata.yaml"))
+    create_metadata_yaml(out_dir, pipeline_wdl, input_json, os.path.join(out_dir, "metadata.yaml"))
