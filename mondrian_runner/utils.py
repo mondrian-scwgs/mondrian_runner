@@ -312,7 +312,7 @@ def get_samples(input_json):
 
     for key in data:
         if 'samples' in key:
-            return list(data[key].keys())
+            return [v['sample_id'] for v in data[key]]
 
     return []
 
