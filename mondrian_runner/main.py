@@ -16,7 +16,7 @@ def main():
 
     if args["which"] == "run":
         runner(args['server_url'], args['wdl_file'], args['input_json'], args['options_json'], args['outdir'],
-               args['imports'], args['workflow_log_dir'], add_metadata = args['add_metadata'])
+               args['workflow_log_dir'], imports = args['imports'], add_metadata = args['add_metadata'])
         return
 
     if args["which"] == "reattach":

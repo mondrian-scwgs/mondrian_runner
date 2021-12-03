@@ -49,7 +49,6 @@ def parse_args():
     )
     run.add_argument(
         "--imports",
-        required=True,
         help='server url'
     )
     run.add_argument(

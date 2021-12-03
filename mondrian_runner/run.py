@@ -4,7 +4,7 @@ import os
 import mondrian_runner.utils as utils
 
 
-def submit_pipeline(server_url, wdl_file, input_json, options_json, imports):
+def submit_pipeline(server_url, wdl_file, input_json, options_json, imports=None):
     logger = logging.getLogger('mondrian_runner.submit')
 
     cmd = [
@@ -15,8 +15,10 @@ def submit_pipeline(server_url, wdl_file, input_json, options_json, imports):
         '-F', 'workflowSource=@{}'.format(wdl_file),
         '-F', 'workflowInputs=@{}'.format(input_json),
         '-F', 'workflowOptions=@{}'.format(options_json),
-        '-F', 'workflowDependencies=@{}'.format(imports)
     ]
+
+    if imports is not None:
+        cmd += ['-F', 'workflowDependencies=@{}'.format(imports)]
 
     logger.info('running: {}'.format(' '.join(cmd)))
 
@@ -31,9 +33,9 @@ def submit_pipeline(server_url, wdl_file, input_json, options_json, imports):
 
 def runner(
         server_url, pipeline_wdl, input_json, options_json,
-        outdir, version, workflow_log_dir, add_metadata=False
+        outdir, workflow_log_dir, imports=None, add_metadata=False
 ):
-    run_id = submit_pipeline(server_url, pipeline_wdl, input_json, options_json, version)
+    run_id = submit_pipeline(server_url, pipeline_wdl, input_json, options_json, imports=imports)
 
     utils.cache_run_id(run_id, outdir)
 
