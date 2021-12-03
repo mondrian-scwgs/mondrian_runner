@@ -3,13 +3,10 @@ import json
 import logging
 import os
 import random
-import shutil
 from functools import wraps
 from subprocess import Popen, PIPE
 
-import mondrianutils.helpers
 import time
-import yaml
 
 
 class Backoff(object):
@@ -276,70 +273,3 @@ def follow(logfile, server_url, run_id, logger, sleep_time=10):
             continue
 
         yield line
-
-
-def load_options_json(options_json):
-    data = json.load(open(options_json, 'rt'))
-
-    return {
-        'wf_logs': data['final_workflow_log_dir'],
-        'out_dir': data['final_workflow_outputs_dir'],
-    }
-
-
-def extract_name_version(wdl_file):
-    with open(wdl_file, 'rt') as wdl_reader:
-        pipeline_version = wdl_reader.readline()
-
-        if pipeline_version.startswith('#{"meta"'):
-            pipeline_version = pipeline_version[1:]
-            pipeline_version = json.loads(pipeline_version)['meta']
-            return pipeline_version['name'], pipeline_version['version']
-        else:
-            return None, None
-
-
-def get_all_outputs(outdir):
-    files = os.listdir(outdir)
-    for file in files:
-        if os.path.isdir(file):
-            raise Exception("dir found in outputdir")
-
-    return files
-
-def get_samples(input_json):
-    data = json.load(open(input_json, 'rt'))
-
-    for key in data:
-        if 'samples' in key:
-            return [v['sample_id'] for v in data[key]]
-
-    return []
-
-
-def create_metadata_yaml(outdir, pipeline_wdl, input_json, yamlfile):
-    name, version = extract_name_version(pipeline_wdl)
-    files = get_all_outputs(outdir)
-
-    mondrianutils.helpers.validate_outputs(files, name, samples = get_samples(input_json))
-
-    data = {
-        'filenames': files,
-        'meta': {
-            'version': version,
-            'name': name
-        }
-    }
-
-    with open(yamlfile, 'wt') as writer:
-        yaml.dump(data, writer, default_flow_style=False)
-
-
-def add_metadata(options_json, input_json, pipeline_wdl):
-    options_data = load_options_json(options_json)
-
-    out_dir = options_data['out_dir']
-
-    shutil.copyfile(input_json, os.path.join(out_dir, "input.json"))
-
-    create_metadata_yaml(out_dir, pipeline_wdl, input_json, os.path.join(out_dir, "metadata.yaml"))

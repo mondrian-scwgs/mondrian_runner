@@ -1,6 +1,7 @@
 import logging
 import os
 
+import mondrian_runner.metadata as metadata
 import mondrian_runner.utils as utils
 
 
@@ -47,4 +48,4 @@ def runner(
         raise Exception('pipeline fail, status: {}'.format(status))
 
     if add_metadata:
-        utils.add_metadata(options_json, input_json, pipeline_wdl)
+        metadata.add_metadata(options_json, input_json, pipeline_wdl)
