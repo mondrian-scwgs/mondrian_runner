@@ -1,7 +1,6 @@
 import logging
 import os
 
-import mondrian_runner.metadata as metadata
 import mondrian_runner.utils as utils
 
 
@@ -34,7 +33,7 @@ def submit_pipeline(server_url, wdl_file, input_json, options_json, imports=None
 
 def runner(
         server_url, pipeline_wdl, input_json, options_json,
-        outdir, workflow_log_dir, imports=None, add_metadata=False
+        outdir, workflow_log_dir, imports=None
 ):
     run_id = submit_pipeline(server_url, pipeline_wdl, input_json, options_json, imports=imports)
 
@@ -46,6 +45,3 @@ def runner(
 
     if not status == 'succeeded':
         raise Exception('pipeline fail, status: {}'.format(status))
-
-    if add_metadata:
-        metadata.add_metadata(options_json, input_json, pipeline_wdl)
