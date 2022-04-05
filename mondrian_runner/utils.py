@@ -1,4 +1,5 @@
 import errno
+import glob
 import json
 import logging
 import os
@@ -7,7 +8,7 @@ from functools import wraps
 from subprocess import Popen, PIPE
 
 import time
-
+import json
 
 class Backoff(object):
     """
@@ -121,7 +122,7 @@ def init_log_file(logfile):
         os.rename(logfile, newpath)
 
 
-def init_logger(tempdir, loglevel):
+def init_file_logger(tempdir, loglevel):
     logfile = os.path.join(tempdir, 'pipeline.log')
     logfile = init_log_file(logfile)
 
@@ -136,22 +137,35 @@ def init_logger(tempdir, loglevel):
     logging.getLogger('').addHandler(console)
 
 
+def init_console_logger(loglevel):
+    logging.basicConfig(
+        level=loglevel,
+        format='%(name)s - %(levelname)s - %(message)s'
+    )
+
+
+
 def get_id_from_tempdir(tempdir):
-    idfile = os.path.join(tempdir, 'run_id.txt')
+    idfile = os.path.join(tempdir, 'run_id.json')
 
     with open(idfile, 'rt') as reader:
-        data = reader.readlines()
-
-        assert len(data) == 1
-        data = data[0].strip()
-
-    return data
+        return json.load(reader)['run_id']
 
 
 def cache_run_id(run_id, outdir):
-    id_file = os.path.join(outdir, 'run_id.txt')
+    id_file = os.path.join(outdir, 'run_id.json')
+    if os.path.exists(id_file):
+        with open(id_file, 'rt') as reader:
+            data = json.load(reader)
+        data['old_run_ids'] = [data['run_id']] + data['old_run_ids']
+        data['run_id'] = run_id
+    else:
+        data = {
+            'run_id': run_id,
+            'old_run_ids': []
+        }
     with open(id_file, 'wt') as writer:
-        writer.write(run_id)
+        json.dump(data, writer)
 
 
 def run_cmd(cmd):
@@ -273,3 +287,17 @@ def follow(logfile, server_url, run_id, logger, sleep_time=10):
             continue
 
         yield line
+
+
+def get_wf_name(execution_dir, run_id):
+    paths = glob.glob('{}/*/{}'.format(execution_dir, run_id))
+
+    assert len(paths) == 1
+
+    paths = paths[0]
+
+    paths = paths.replace(execution_dir, '')
+    paths = paths.replace(run_id, '')
+    paths = paths.replace('/', '')
+
+    return paths

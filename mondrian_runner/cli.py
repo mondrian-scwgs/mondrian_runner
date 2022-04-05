@@ -52,7 +52,7 @@ def parse_args():
         help='server url'
     )
     run.add_argument(
-        "--workflow_log_dir",
+        "--mondrian_dir",
         required=True,
         help='server url'
     )
@@ -64,6 +64,11 @@ def parse_args():
         "--run_id",
         help='server url'
     )
+    reattach.add_argument(
+        "--mondrian_dir",
+        required=True,
+        help='server url'
+    )
 
     abort = subparsers.add_parser("abort")
     abort.set_defaults(which='abort')
@@ -71,6 +76,59 @@ def parse_args():
     abort.add_argument(
         "--run_id",
         help='server url'
+    )
+
+    retry_run = subparsers.add_parser("retry_run")
+    retry_run.set_defaults(which='retry_run')
+    # retry_run = add_global_args(retry_run)
+    retry_run.add_argument(
+        "--cwd"
+    )
+    retry_run.add_argument(
+        "--docker_cwd"
+    )
+    retry_run.add_argument(
+        "--singularity_img",
+    )
+    retry_run.add_argument(
+        "--job_name"
+    )
+    retry_run.add_argument(
+        "--env_setup_command",
+    )
+    retry_run.add_argument(
+        "--memory_gb", type=int
+    )
+    retry_run.add_argument(
+        "--walltime"
+    )
+    retry_run.add_argument(
+        "--cores", type=int
+    )
+    retry_run.add_argument(
+        "--retries", type=int
+    )
+    retry_run.add_argument(
+        "--multiplier", type=int
+    )
+    retry_run.add_argument(
+        "--bind_mounts", nargs='*'
+    )
+    retry_run.add_argument(
+        "--lsf_extra_args"
+    )
+    retry_run.add_argument(
+        "--log_level",
+        default='INFO',
+    )
+    retry_run.add_argument(
+        "--kill_hung_jobs",
+        default=False,
+    )
+    retry_run.add_argument(
+        "--max_mem",
+        default=450,
+        type=int
     )
 
     args = vars(parser.parse_args())

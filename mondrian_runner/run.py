@@ -2,7 +2,7 @@ import logging
 import os
 
 import mondrian_runner.utils as utils
-
+from mondrian_runner.debug import debug
 
 def submit_pipeline(server_url, wdl_file, input_json, options_json, imports=None):
     logger = logging.getLogger('mondrian_runner.submit')
@@ -33,8 +33,10 @@ def submit_pipeline(server_url, wdl_file, input_json, options_json, imports=None
 
 def runner(
         server_url, pipeline_wdl, input_json, options_json,
-        outdir, workflow_log_dir, imports=None
+        outdir, mondrian_dir,  imports=None
 ):
+    workflow_log_dir = os.path.join(mondrian_dir, 'cromwell-workflow-logs')
+
     run_id = submit_pipeline(server_url, pipeline_wdl, input_json, options_json, imports=imports)
 
     utils.cache_run_id(run_id, outdir)
@@ -44,4 +46,8 @@ def runner(
     status = utils.wait(server_url, run_id, logfile)
 
     if not status == 'succeeded':
-        raise Exception('pipeline fail, status: {}'.format(status))
+        execution_dir = os.path.join(mondrian_dir, 'cromwell-executions')
+        wf_name = utils.get_wf_name(execution_dir, run_id)
+        print('detected {} status, extracting errors ...' .format(status))
+        debug(execution_dir, wf_name, run_id)
+
