@@ -4,7 +4,7 @@ from mondrian_runner import utils
 from mondrian_runner.abort import abort
 from mondrian_runner.cli import parse_args
 from mondrian_runner.reattach import reattach
-from mondrian_runner.retry_run_2 import retry_run
+from mondrian_runner.retry_run import retry_run
 from mondrian_runner.run import runner
 
 
