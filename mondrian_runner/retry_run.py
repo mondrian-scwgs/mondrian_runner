@@ -139,8 +139,8 @@ class LsfRunner(object):
         logging.info('job {} submitted'.format(job_id))
         return job_id
 
-    def _get_max_mem(self, job_id):
-        cmd = ['bjobs', '-o', 'MAX_MEM:50', '-json', job_id]
+    def _is_mem_usage_high(self, job_id, requested_mem):
+        cmd = ['bjobs', '-o', 'AVG_MEM:50 MAX_MEM:50', '-json', job_id]
         stdout = subprocess.check_output(cmd).decode()
         stdout = json.loads(stdout)
 
@@ -150,11 +150,19 @@ class LsfRunner(object):
         if 'ERROR' in record:
             raise Exception()
 
-        mem = record['MAX_MEM']
-        assert mem.endswith('Gbytes')
-        mem = mem.replace(' Gbytes', '')
-        mem = float(mem)
-        return mem
+        max_mem = record['MAX_MEM']
+        assert max_mem.endswith('Gbytes')
+        max_mem = max_mem.replace(' Gbytes', '')
+        max_mem = float(max_mem)
+
+        avg_mem = record['AVG_MEM']
+        assert avg_mem.endswith('Gbytes')
+        avg_mem = avg_mem.replace(' Gbytes', '')
+        avg_mem = float(avg_mem)
+
+        if max_mem >= requested_mem and avg_mem/requested_mem > 0.95:
+            logging.warning('job {} has exhausted requested memory'.format(job_id))
+            return True
 
     def kill_job(self, job_id):
         cmd = ['bkill', job_id]
@@ -164,7 +172,6 @@ class LsfRunner(object):
 
     def monitor(self, job_id, memory, max_sleep=180, min_sleep=60, memory_monitor_minutes=120):
         start_time = time.time()
-        is_memory_maxed = False
 
         while True:
             cmd = ['bjobs', '-o', 'STAT:6', '-json', job_id]
@@ -178,20 +185,11 @@ class LsfRunner(object):
 
             status = record['STAT']
 
-            elapsed = time.time() - start_time
-            elapsed = elapsed / 60
-
+            elapsed = (time.time() - start_time)/60
             if elapsed > memory_monitor_minutes:
                 start_time = time.time()
-                max_mem = self._get_max_mem(job_id)
-                if max_mem >= memory:
-                    if is_memory_maxed is True:
-                        # it was maxed out for 2 hours, likely hung, see SHAH-2150
-                        logging.warning('job {} has exhausted requested memory'.format(job_id))
-                        if self.kill_hung_jobs:
-                            self.kill_job(job_id)
-                    else:
-                        is_memory_maxed = True
+                if self._is_mem_usage_high(job_id, memory) and self.kill_hung_jobs:
+                    self.kill_job(job_id)
 
             if status in ['DONE', 'EXIT', 'UNKWN', 'ZOMBI'] or "SUSP" in status:
                 exit_code, reason = self._get_exit_code_reason(job_id)
