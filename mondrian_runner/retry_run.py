@@ -177,6 +177,7 @@ class LsfRunner(object):
     def monitor(self, job_id, memory, max_sleep_secs=180, min_sleep_secs=60, pend_sleep_mins=20,
                 memory_monitor_mins=120):
         start_time = time.time()
+        queued_wait_mins = 2
 
         while True:
             cmd = ['bjobs', '-o', 'STAT:6', '-json', job_id]
@@ -191,7 +192,8 @@ class LsfRunner(object):
             status = record['STAT']
 
             if status in ['PEND', 'WAIT', 'PROV']:
-                time.sleep(pend_sleep_mins * 60)
+                time.sleep(queued_wait_mins*60)
+                queued_wait_mins = min(queued_wait_mins*2, pend_sleep_mins)
             elif status == 'RUN':
                 time.sleep(random.randint(min_sleep_secs, max_sleep_secs))
                 elapsed = (time.time() - start_time) / 60
