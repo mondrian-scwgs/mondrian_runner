@@ -160,7 +160,7 @@ class LsfRunner(object):
         avg_mem = avg_mem.replace(' Gbytes', '')
         avg_mem = float(avg_mem)
 
-        if max_mem >= requested_mem and avg_mem/requested_mem > 0.95:
+        if max_mem >= requested_mem and avg_mem / requested_mem > 0.95:
             logging.warning('job {} has exhausted requested memory'.format(job_id))
             return True
 
@@ -170,7 +170,8 @@ class LsfRunner(object):
         logging.info('killing job id: {}'.format(job_id))
         logging.info(stdout)
 
-    def monitor(self, job_id, memory, max_sleep=180, min_sleep=60, memory_monitor_minutes=120):
+    def monitor(self, job_id, memory, max_sleep_secs=180, min_sleep_secs=60, pend_sleep_mins=20,
+                memory_monitor_mins=120):
         start_time = time.time()
 
         while True:
@@ -185,17 +186,18 @@ class LsfRunner(object):
 
             status = record['STAT']
 
-            elapsed = (time.time() - start_time)/60
-            if elapsed > memory_monitor_minutes:
-                start_time = time.time()
-                if self._is_mem_usage_high(job_id, memory) and self.kill_hung_jobs:
-                    self.kill_job(job_id)
-
-            if status in ['DONE', 'EXIT', 'UNKWN', 'ZOMBI'] or "SUSP" in status:
+            if status in ['PEND', 'WAIT', 'PROV']:
+                time.sleep(pend_sleep_mins * 60)
+            elif status == 'RUN':
+                time.sleep(random.randint(min_sleep_secs, max_sleep_secs))
+                elapsed = (time.time() - start_time) / 60
+                if elapsed > memory_monitor_mins:
+                    start_time = time.time()
+                    if self._is_mem_usage_high(job_id, memory) and self.kill_hung_jobs:
+                        self.kill_job(job_id)
+            elif status in ['DONE', 'EXIT', 'UNKWN', 'ZOMBI'] or "SUSP" in status:
                 exit_code, reason = self._get_exit_code_reason(job_id)
                 return exit_code, reason
-            elif status in ['PEND', 'WAIT', 'PROV', 'RUN']:
-                time.sleep(random.randint(min_sleep, max_sleep))
             else:
                 raise Exception('Unknown job status: {}'.format(status))
 
