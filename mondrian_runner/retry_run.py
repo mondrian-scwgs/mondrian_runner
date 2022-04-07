@@ -16,7 +16,7 @@ class LsfRunner(object):
             self,
             working_dir,
             job_script,
-            job_name_prefix,
+            job_name_suffix,
             num_cores,
             walltime_hours,
             memory_gb,
@@ -28,7 +28,7 @@ class LsfRunner(object):
     ):
         self.working_dir = working_dir
         self.job_script = job_script
-        self.job_name_prefix = job_name_prefix
+        self.job_name_suffix = job_name_suffix
         self.num_cores = num_cores
         self.walltime_hours = walltime_hours
         self.memory_gb = memory_gb
@@ -206,7 +206,7 @@ class LsfRunner(object):
         walltime = self.walltime_hours
 
         for attempt_num in range(self.retries):
-            attempt_job_name = '{}_attempt_{}'.format(self.job_name_prefix, attempt_num)
+            attempt_job_name = 'attempt_{}_{}'.format(attempt_num, self.job_name_suffix)
             logging.info(
                 "attempt number {} with job name {} and memory {}".format(attempt_num, attempt_job_name, memory)
             )
