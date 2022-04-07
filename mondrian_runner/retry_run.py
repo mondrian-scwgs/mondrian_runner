@@ -151,12 +151,16 @@ class LsfRunner(object):
             raise Exception()
 
         max_mem = record['MAX_MEM']
-        assert max_mem.endswith('Gbytes')
+        if max_mem == "":
+            return
+        assert max_mem.endswith('Gbytes'), max_mem
         max_mem = max_mem.replace(' Gbytes', '')
         max_mem = float(max_mem)
 
         avg_mem = record['AVG_MEM']
-        assert avg_mem.endswith('Gbytes')
+        if avg_mem == "":
+            return
+        assert avg_mem.endswith('Gbytes'), max_mem
         avg_mem = avg_mem.replace(' Gbytes', '')
         avg_mem = float(avg_mem)
 
