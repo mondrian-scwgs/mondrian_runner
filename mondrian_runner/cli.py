@@ -169,11 +169,18 @@ def parse_args():
     generate_bsub_command.add_argument(
         "--docker_script", required=True
     )
-    retry_run.add_argument(
+    generate_bsub_command.add_argument(
         "--max_mem",
         default=450,
         type=int
     )
+    retry_run.add_argument(
+        "--bind_mounts", nargs='*', default=['/work', '/juno/work']
+    )
+    retry_run.add_argument(
+        "--lsf_extra_args",
+    )
+
 
     args = vars(parser.parse_args())
 

@@ -3,9 +3,9 @@ import os
 from mondrian_runner import utils
 from mondrian_runner.abort import abort
 from mondrian_runner.cli import parse_args
+from mondrian_runner.generate_bsub_command import generate_bsub_command
 from mondrian_runner.reattach import reattach
 from mondrian_runner.retry_run import retry_run
-from mondrian_runner.generate_bsub_command import generate_bsub_command
 from mondrian_runner.run import runner
 
 
@@ -36,8 +36,10 @@ def main():
             args["cwd"], args["multiplier"], args["walltime"], args["memory_gb"],
             args["cpu"], args["job_name"], args["out"], args["err"], args["docker_cwd"],
             args["singularity_img"], args["job_shell"], args["docker_script"],
-            max_mem=args['max_mem']
+            max_mem=args['max_mem'], bind_mounts=args['bind_mounts'],
+            lsf_extra_args=args['lsf_extra_args']
         )
+        return
 
     utils.makedirs(args['outdir'])
 

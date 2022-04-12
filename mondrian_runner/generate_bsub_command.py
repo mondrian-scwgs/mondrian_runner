@@ -1,13 +1,12 @@
+import subprocess
+
+
 def generate_bsub_command(
         cwd, multiplier, walltime, memory_gb,
         cpu, job_name, out, err, docker_cwd,
-        singularity_img, job_shell, docker_script, max_mem=450
+        singularity_img, job_shell, docker_script,
+        max_mem=None, bind_mounts=None, lsf_extra_args=None
 ):
-    cmd = "bsub -n {cpu} -W {walltime} -R 'rusage[mem={memory_gb}]span[ptile={cpu}]' " \
-          "-J {job_name} -cwd {cwd} -o {out} -e {err} --wrap singularity exec " \
-          "--containall --bind /work --bind /juno/work --bind {cwd}:{docker_cwd} " \
-          "{singularity_img} {job_shell} {docker_script}"
-
     attempt_num = [v for v in cwd.split('/') if 'attempt' in v]
 
     if len(attempt_num) == 0:
@@ -26,21 +25,30 @@ def generate_bsub_command(
 
     # this is the max available mem on the nodes we own. if job requests more
     # then queueing will take infinite time.
-    if memory_gb*cpu > max_mem:
-        memory_gb = max_mem//cpu
+    if max_mem is not None and memory_gb * cpu > max_mem:
+        memory_gb = max_mem // cpu
 
-    cmd = cmd.format(
-        cpu=cpu,
-        walltime=walltime,
-        memory_gb=memory_gb,
-        job_name=job_name,
-        cwd=cwd,
-        out=out,
-        err=err,
-        docker_cwd=docker_cwd,
-        singularity_img=singularity_img,
-        job_shell=job_shell,
-        docker_script=docker_script
-    )
+    cmd = [
+        "bsub", "-n", cpu, "-W", walltime,
+        "-R", "'rusage[mem={}]span[ptile={}]'".format(memory_gb, cpu),
+        "-J", job_name, "-cwd", cwd, "-o", out, "-e", err
+    ]
 
-    print(cmd)
+    if lsf_extra_args is not None:
+        cmd.extend(lsf_extra_args.split())
+
+    cmd += [
+        "--wrap", "singularity", "exec", "--containall", "--bind",
+        "{}:{}".format(cwd, docker_cwd)
+    ]
+
+    for mount in bind_mounts:
+        cmd.extend(['--bind', mount])
+
+    cmd += [
+        singularity_img, job_shell, docker_script
+    ]
+
+    cmd = [str(v) for v in cmd]
+    stdout = subprocess.check_output(cmd).decode()
+    print(stdout)
