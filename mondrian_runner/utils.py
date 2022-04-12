@@ -199,7 +199,10 @@ def get_workflow_url(wf_name, version):
 
 
 def get_run_id(stdout):
-    run_id = json.loads(stdout)['id']
+    try:
+        run_id = json.loads(stdout)['id']
+    except:
+        raise Exception('unable to parse id: {}'.format(stdout))
 
     return run_id
 

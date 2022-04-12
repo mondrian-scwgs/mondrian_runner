@@ -131,6 +131,50 @@ def parse_args():
         type=int
     )
 
+    generate_bsub_command = subparsers.add_parser("generate_bsub_command")
+    generate_bsub_command.set_defaults(which='generate_bsub_command')
+    generate_bsub_command.add_argument(
+        "--cwd", required=True
+    )
+    generate_bsub_command.add_argument(
+        "--multiplier", type=int, default=2
+    )
+    generate_bsub_command.add_argument(
+        "--walltime", required=True
+    )
+    generate_bsub_command.add_argument(
+        "--memory_gb", type=int, required=True
+    )
+    generate_bsub_command.add_argument(
+        "--cpu", type=int, required=True
+    )
+    generate_bsub_command.add_argument(
+        "--job_name", required=True
+    )
+    generate_bsub_command.add_argument(
+        "--out", required=True
+    )
+    generate_bsub_command.add_argument(
+        "--err", required=True
+    )
+    generate_bsub_command.add_argument(
+        "--docker_cwd", required=True
+    )
+    generate_bsub_command.add_argument(
+        "--singularity_img", required=True
+    )
+    generate_bsub_command.add_argument(
+        "--job_shell", required=True
+    )
+    generate_bsub_command.add_argument(
+        "--docker_script", required=True
+    )
+    retry_run.add_argument(
+        "--max_mem",
+        default=450,
+        type=int
+    )
+
     args = vars(parser.parse_args())
 
     return args

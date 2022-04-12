@@ -5,6 +5,7 @@ from mondrian_runner.abort import abort
 from mondrian_runner.cli import parse_args
 from mondrian_runner.reattach import reattach
 from mondrian_runner.retry_run import retry_run
+from mondrian_runner.generate_bsub_command import generate_bsub_command
 from mondrian_runner.run import runner
 
 
@@ -30,6 +31,13 @@ def main():
             kill_hung_jobs=args['kill_hung_jobs']
         )
         return
+    elif args['which'] == 'generate_bsub_command':
+        generate_bsub_command(
+            args["cwd"], args["multiplier"], args["walltime"], args["memory_gb"],
+            args["cpu"], args["job_name"], args["out"], args["err"], args["docker_cwd"],
+            args["singularity_img"], args["job_shell"], args["docker_script"],
+            max_mem=args['max_mem']
+        )
 
     utils.makedirs(args['outdir'])
 
