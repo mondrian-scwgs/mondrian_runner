@@ -174,10 +174,10 @@ def parse_args():
         default=450,
         type=int
     )
-    retry_run.add_argument(
+    generate_bsub_command.add_argument(
         "--bind_mounts", nargs='*', default=['/work', '/juno/work']
     )
-    retry_run.add_argument(
+    generate_bsub_command.add_argument(
         "--lsf_extra_args",
     )
 
