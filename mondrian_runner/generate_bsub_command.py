@@ -61,7 +61,6 @@ def find_job_id(cwd):
     submit_stdout = "{}/execution/stdout.submit".format(cwd)
     with open(submit_stdout, 'rt') as reader:
         data = reader.readlines()
-        assert len(data) == 1
         data = data[0]
     jobid = data.split('<')[1].split('>')[0]
     return jobid
