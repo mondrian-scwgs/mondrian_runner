@@ -46,6 +46,7 @@ def main():
         check_alive(
             args['job_id'], kill_hung_jobs=args['kill_hung_jobs']
         )
+        return
 
     utils.makedirs(args['outdir'])
 
