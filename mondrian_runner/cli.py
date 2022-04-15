@@ -186,6 +186,16 @@ def parse_args():
         "--lsf_extra_args",
     )
 
+    check_alive = subparsers.add_parser("check_alive")
+    check_alive.set_defaults(which='check_alive')
+    check_alive.add_argument(
+        "--job_id", required=True
+    )
+    check_alive.add_argument(
+        "--kill_hung_jobs", default=False
+    )
+
+
     args = vars(parser.parse_args())
 
     return args

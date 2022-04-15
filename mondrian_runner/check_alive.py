@@ -1,0 +1,76 @@
+import json
+import random
+import subprocess
+
+
+def kill_job(job_id):
+    cmd = ['bkill', job_id]
+    # logging.info('killing job id: {}'.format(job_id))
+    stdout = subprocess.check_output(cmd).decode()
+    print(stdout)
+
+
+def _is_mem_usage_high(job_id):
+    cmd = ['bjobs', '-o', 'AVG_MEM:15 MAX_MEM:15 MEMLIMIT:15', '-json', job_id]
+    stdout = subprocess.check_output(cmd).decode()
+    stdout = json.loads(stdout)
+
+    assert stdout['JOBS'] == 1
+    record = stdout['RECORDS'][0]
+
+    if 'ERROR' in record:
+        raise Exception()
+
+    max_mem = record['MAX_MEM']
+    if max_mem == "":
+        return
+    assert max_mem.endswith('Gbytes'), max_mem
+    max_mem = max_mem.replace(' Gbytes', '')
+    max_mem = float(max_mem)
+
+    avg_mem = record['AVG_MEM']
+    if avg_mem == "":
+        return
+    assert avg_mem.endswith('Gbytes'), max_mem
+    avg_mem = avg_mem.replace(' Gbytes', '')
+    avg_mem = float(avg_mem)
+
+    requested_mem = record['MEMLIMIT']
+    if requested_mem == "":
+        return
+    assert requested_mem.endswith('G'), max_mem
+    requested_mem = requested_mem.replace(' G', '')
+    requested_mem = float(requested_mem)
+
+    if max_mem >= requested_mem and avg_mem / requested_mem > 0.95:
+        # logging.warning('job {} has exhausted requested memory'.format(job_id))
+        return True
+
+
+def get_job_status(job_id):
+    cmd = ['bjobs', '-o', 'STAT:6', '-json', job_id]
+    stdout = subprocess.check_output(cmd).decode()
+    stdout = json.loads(stdout)
+    assert stdout['JOBS'] == 1
+    record = stdout['RECORDS'][0]
+    if 'ERROR' in record:
+        raise Exception()
+    status = record['STAT']
+
+    return status
+
+
+def check_alive(job_id, kill_hung_jobs=False):
+    status = get_job_status(job_id)
+
+    if status in ['PEND', 'WAIT', 'PROV', 'RUN']:
+        print(status)
+
+    # 1 in 5 chance that we query and kill job
+    # to lower load on LSF
+    check_hung = random.randint(1, 5) == 5
+    if kill_hung_jobs and status == 'RUN' and check_hung:
+        if _is_mem_usage_high(job_id):
+            kill_job(job_id)
+
+    # if we print nothing, cromwell asssumes job finished

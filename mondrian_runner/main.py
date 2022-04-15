@@ -6,6 +6,7 @@ from mondrian_runner.cli import parse_args
 from mondrian_runner.generate_bsub_command import generate_bsub_command
 from mondrian_runner.reattach import reattach
 from mondrian_runner.retry_run import retry_run
+from mondrian_runner.check_alive import check_alive
 from mondrian_runner.run import runner
 
 
@@ -41,6 +42,10 @@ def main():
             lsf_extra_args=args['lsf_extra_args']
         )
         return
+    elif args['which'] == 'check_alive':
+        check_alive(
+            args['job_id'], kill_hung_jobs=args['kill_hung_jobs']
+        )
 
     utils.makedirs(args['outdir'])
 
