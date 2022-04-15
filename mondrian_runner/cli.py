@@ -175,12 +175,16 @@ def parse_args():
         type=int
     )
     generate_bsub_command.add_argument(
+        "--max_walltime_hrs",
+        default=720,
+        type=int
+    )
+    generate_bsub_command.add_argument(
         "--bind_mounts", nargs='*', default=['/work', '/juno/work']
     )
     generate_bsub_command.add_argument(
         "--lsf_extra_args",
     )
-
 
     args = vars(parser.parse_args())
 

@@ -28,6 +28,7 @@ def main():
             args['bind_mounts'],
             args['lsf_extra_args'],
             max_mem=args['max_mem'],
+            max_walltime_hrs=args['max_walltime_hrs'],
             kill_hung_jobs=args['kill_hung_jobs']
         )
         return
