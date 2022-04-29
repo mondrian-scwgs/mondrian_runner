@@ -192,7 +192,7 @@ def parse_args():
         "--job_id", required=True
     )
     check_alive.add_argument(
-        "--kill_hung_jobs", default=False
+        "--kill_hung_jobs", default=False, action='store_true'
     )
 
 
