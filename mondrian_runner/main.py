@@ -44,7 +44,7 @@ def main():
         return
     elif args['which'] == 'check_alive':
         check_alive(
-            args['job_id'], kill_hung_jobs=args['kill_hung_jobs']
+            args['job_id'], kill_hung_jobs=args['kill_hung_jobs'], working_dir=args['working_dir']
         )
         return
 

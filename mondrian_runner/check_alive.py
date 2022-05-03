@@ -18,8 +18,9 @@ def _get_working_dir(job_id):
     return record['EXEC_CWD']
 
 
-def create_rc_file_on_fail(job_id):
-    working_dir = _get_working_dir(job_id)
+def create_rc_file_on_fail(job_id, working_dir=None):
+    if working_dir is None:
+        working_dir = _get_working_dir(job_id)
     rcfile = os.path.join(working_dir, 'execution', 'rc')
 
     if os.path.exists(rcfile):
@@ -34,8 +35,6 @@ def kill_job(job_id):
     # logging.info('killing job id: {}'.format(job_id))
     stdout = subprocess.check_output(cmd).decode()
     print(stdout)
-
-    create_rc_file_on_fail(job_id)
 
 
 def _is_mem_usage_high(job_id):
@@ -88,7 +87,7 @@ def get_job_status(job_id):
     return status
 
 
-def check_alive(job_id, kill_hung_jobs=False):
+def check_alive(job_id, kill_hung_jobs=False, working_dir=None):
     status = get_job_status(job_id)
 
     if status in ['PEND', 'WAIT', 'PROV', 'RUN']:
@@ -100,8 +99,9 @@ def check_alive(job_id, kill_hung_jobs=False):
     if kill_hung_jobs and status == 'RUN' and check_hung:
         if _is_mem_usage_high(job_id):
             kill_job(job_id)
+            create_rc_file_on_fail(job_id, working_dir=working_dir)
             return
 
     # if we print nothing, cromwell assumes job finished
     if 'SUSP' in status or status == 'EXIT':
-        create_rc_file_on_fail(job_id)
+        create_rc_file_on_fail(job_id, working_dir=working_dir)
