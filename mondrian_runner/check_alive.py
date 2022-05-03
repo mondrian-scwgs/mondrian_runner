@@ -70,9 +70,11 @@ def _is_mem_usage_high(job_id):
     requested_mem = requested_mem.replace(' G', '')
     requested_mem = float(requested_mem)
 
-    if max_mem >= requested_mem and avg_mem / requested_mem > 0.95:
-        # logging.warning('job {} has exhausted requested memory'.format(job_id))
-        return True
+    if max_mem >= requested_mem:
+        if avg_mem == requested_mem - 1:
+            return True
+        if avg_mem / requested_mem >= 0.9:
+            return True
 
 
 def get_job_status(job_id):
