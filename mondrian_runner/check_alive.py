@@ -1,6 +1,32 @@
 import json
+import os
 import random
 import subprocess
+
+
+def _get_working_dir(job_id):
+    cmd = ['bjobs', '-o', 'EXEC_CWD:4096', '-json', job_id]
+    stdout = subprocess.check_output(cmd).decode()
+    stdout = json.loads(stdout)
+
+    assert stdout['JOBS'] == 1
+    record = stdout['RECORDS'][0]
+
+    if 'ERROR' in record:
+        raise Exception()
+
+    return record['EXEC_CWD']
+
+
+def create_rc_file_on_fail(job_id):
+    working_dir = _get_working_dir(job_id)
+    rcfile = os.path.join(working_dir, 'execution', 'rc')
+
+    if os.path.exists(rcfile):
+        return
+
+    with open(rcfile, 'rt') as writer:
+        writer.write('-1')
 
 
 def kill_job(job_id):
@@ -8,6 +34,8 @@ def kill_job(job_id):
     # logging.info('killing job id: {}'.format(job_id))
     stdout = subprocess.check_output(cmd).decode()
     print(stdout)
+
+    create_rc_file_on_fail(job_id)
 
 
 def _is_mem_usage_high(job_id):
@@ -72,5 +100,8 @@ def check_alive(job_id, kill_hung_jobs=False):
     if kill_hung_jobs and status == 'RUN' and check_hung:
         if _is_mem_usage_high(job_id):
             kill_job(job_id)
+            return
 
-    # if we print nothing, cromwell asssumes job finished
+    # if we print nothing, cromwell assumes job finished
+    if 'SUSP' in status or status == 'EXIT':
+        create_rc_file_on_fail(job_id)
