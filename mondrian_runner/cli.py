@@ -194,9 +194,7 @@ def parse_args():
     check_alive.add_argument(
         "--kill_hung_jobs", default=False, action='store_true'
     )
-    check_alive.add_argument(
-        "--working_dir"
-    )
+
 
     args = vars(parser.parse_args())
 
