@@ -25,7 +25,7 @@ def create_rc_file_on_fail(job_id):
     if os.path.exists(rcfile):
         return
 
-    with open(rcfile, 'rt') as writer:
+    with open(rcfile, 'wt') as writer:
         writer.write('-1')
 
 
