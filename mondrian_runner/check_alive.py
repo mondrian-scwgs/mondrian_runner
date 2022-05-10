@@ -73,6 +73,7 @@ def _is_mem_usage_high(job_id):
     cpu = record['SLOTS']
     if cpu == "":
         return
+    cpu = int(cpus)
     requested_mem = requested_mem * cpu
 
     if max_mem >= requested_mem:
