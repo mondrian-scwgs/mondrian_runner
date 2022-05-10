@@ -39,7 +39,7 @@ def kill_job(job_id):
 
 
 def _is_mem_usage_high(job_id):
-    cmd = ['bjobs', '-o', 'AVG_MEM:15 MAX_MEM:15 MEMLIMIT:15', '-json', job_id]
+    cmd = ['bjobs', '-o', 'AVG_MEM:15 MAX_MEM:15 MEMLIMIT:15 SLOTS:10', '-json', job_id]
     stdout = subprocess.check_output(cmd).decode()
     stdout = json.loads(stdout)
 
@@ -69,6 +69,11 @@ def _is_mem_usage_high(job_id):
     assert requested_mem.endswith('G'), max_mem
     requested_mem = requested_mem.replace(' G', '')
     requested_mem = float(requested_mem)
+
+    cpu = record['SLOTS']
+    if cpu == "":
+        return
+    requested_mem = requested_mem * cpu
 
     if max_mem >= requested_mem:
         if avg_mem == requested_mem - 1:
