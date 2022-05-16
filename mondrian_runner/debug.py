@@ -67,7 +67,7 @@ def get_stderr(execution_dir):
         return 'unable to find error files in {}\n'.format(execution_dir)
 
 
-def debug(cromwell_execution_dir, wf_name, run_id, successful_return_codes=(0,)):
+def debug(cromwell_execution_dir, wf_name, run_id, successful_return_codes=('0',)):
     run_dir = os.path.join(cromwell_execution_dir, wf_name, run_id)
     assert os.path.exists(run_dir)
 
