@@ -158,10 +158,12 @@ def generate_bsub_command(
         max_mem=max_mem
     )
 
-    submit_job(
+    job_id = submit_job(
         cpu, walltime, memory_gb, job_name,
         cwd, out, err, lsf_extra_args,
         docker_cwd, bind_mounts,
         singularity_img, job_shell,
         docker_script
     )
+
+    cache_job_information(job_id, walltime, memory_gb, cwd)
