@@ -5,7 +5,7 @@ import subprocess
 
 
 def _get_working_dir(job_id):
-    cmd = ['bjobs', '-o', 'EXEC_CWD:4096', '-json', job_id]
+    cmd = ['bjobs', '-o', 'EXEC_CWD:1024', '-json', job_id]
     stdout = subprocess.check_output(cmd).decode()
     stdout = json.loads(stdout)
 
@@ -38,7 +38,7 @@ def kill_job(job_id):
     create_rc_file_on_fail(job_id)
 
 
-def _is_mem_usage_high(job_id):
+def _is_avg_mem_usage_high(job_id):
     cmd = ['bjobs', '-o', 'AVG_MEM:15 MAX_MEM:15 MEMLIMIT:15 SLOTS:10', '-json', job_id]
     stdout = subprocess.check_output(cmd).decode()
     stdout = json.loads(stdout)
@@ -81,6 +81,41 @@ def _is_mem_usage_high(job_id):
             return True
         if avg_mem / requested_mem >= 0.9:
             return True
+
+
+def _is_mem_usage_high(job_id):
+    cmd = ['bjobs', '-o', 'MAX_MEM:15 MEMLIMIT:15 SLOTS:10', '-json', job_id]
+    stdout = subprocess.check_output(cmd).decode()
+    stdout = json.loads(stdout)
+
+    assert stdout['JOBS'] == 1
+    record = stdout['RECORDS'][0]
+
+    if 'ERROR' in record:
+        raise Exception()
+
+    max_mem = record['MAX_MEM']
+    if max_mem == "":
+        return
+    assert max_mem.endswith('Gbytes'), max_mem
+    max_mem = max_mem.replace(' Gbytes', '')
+    max_mem = float(max_mem)
+
+    requested_mem = record['MEMLIMIT']
+    if requested_mem == "":
+        return
+    assert requested_mem.endswith('G'), max_mem
+    requested_mem = requested_mem.replace(' G', '')
+    requested_mem = float(requested_mem)
+
+    cpu = record['SLOTS']
+    if cpu == "":
+        return
+    cpu = int(cpu)
+    requested_mem = requested_mem * cpu
+
+    if max_mem >= requested_mem:
+        return True
 
 
 def get_job_status(job_id):
