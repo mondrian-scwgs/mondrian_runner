@@ -56,6 +56,12 @@ def parse_args():
         required=True,
         help='server url'
     )
+    run.add_argument(
+        "--delete_intermediates",
+        action='store_true',
+        default=False,
+        help='server url'
+    )
 
     reattach = subparsers.add_parser("reattach")
     reattach.set_defaults(which='reattach')

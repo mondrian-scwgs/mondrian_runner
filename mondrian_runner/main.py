@@ -54,7 +54,7 @@ def main():
 
     if args["which"] == "run":
         runner(args['server_url'], args['wdl_file'], args['input_json'], args['options_json'], args['outdir'],
-               args['mondrian_dir'], imports=args['imports'])
+               args['mondrian_dir'], imports=args['imports'], delete_intermediates=args['delete_intermediates'])
         return
 
     if args["which"] == "reattach":

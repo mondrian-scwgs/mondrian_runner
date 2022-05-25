@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 
 import mondrian_runner.utils as utils
 from mondrian_runner.debug import debug
@@ -33,7 +34,7 @@ def submit_pipeline(server_url, wdl_file, input_json, options_json, imports=None
 
 def runner(
         server_url, pipeline_wdl, input_json, options_json,
-        outdir, mondrian_dir,  imports=None
+        outdir, mondrian_dir,  imports=None, delete_intermediates=False
 ):
     workflow_log_dir = os.path.join(mondrian_dir, 'cromwell-workflow-logs')
 
@@ -50,4 +51,9 @@ def runner(
         wf_name = utils.get_wf_name(execution_dir, run_id)
         print('detected {} status, extracting errors ...' .format(status))
         debug(execution_dir, wf_name, run_id)
-
+    else:
+        if delete_intermediates:
+            execution_dir = os.path.join(mondrian_dir, 'cromwell-executions')
+            wf_name = utils.get_wf_name(execution_dir, run_id)
+            run_dir = os.path.join(execution_dir, wf_name, run_id)
+            shutil.rmtree(run_dir)
