@@ -114,7 +114,7 @@ def _is_mem_usage_high(job_id):
     cpu = int(cpu)
     requested_mem = requested_mem * cpu
 
-    if max_mem >= requested_mem:
+    if max_mem >= (requested_mem -1):
         return True
 
 
