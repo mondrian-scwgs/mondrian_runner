@@ -96,10 +96,18 @@ def update_memory(memory_gb, cpu, multiplier, max_mem=None):
 
 
 def update_resource_requests(
-        walltime, memory_gb, multiplier, cpu, fail_reason,
+        walltime, memory_gb, attempt, multiplier, cpu, fail_reason,
         max_mem=None, max_walltime_hrs=None
 ):
-    if 'TERM_RUNLIMIT' in fail_reason:
+    # just increase both on second attempt to be conservative
+    if attempt == 2:
+        walltime = update_walltime(
+            walltime, multiplier, max_walltime_hrs=max_walltime_hrs
+        )
+        memory_gb = update_memory(
+            memory_gb, cpu, multiplier, max_mem=max_mem
+        )
+    elif 'TERM_RUNLIMIT' in fail_reason:
         walltime = update_walltime(
             walltime, multiplier, max_walltime_hrs=max_walltime_hrs
         )
@@ -111,14 +119,15 @@ def update_resource_requests(
     return walltime, memory_gb
 
 
-def cache_job_information(job_id, walltime, memory_gb, cwd):
+def cache_job_information(job_id, walltime, memory_gb, attempt_number, cwd):
     cache_file = os.path.join(cwd, 'execution', 'job_information.json')
     if os.path.exists(cache_file):
         raise Exception('Cannot cache, file exists:{}'.format(cache_file))
 
     with open(cache_file, 'wt') as writer:
         json.dump(
-            {'job_id': job_id, 'walltime': walltime, 'memory_gb': memory_gb},
+            {'job_id': job_id, 'walltime': walltime, 'memory_gb': memory_gb,
+             'attempt': attempt_number},
             writer
         )
 
@@ -145,7 +154,7 @@ def generate_bsub_command(
             singularity_img, job_shell,
             docker_script
         )
-        cache_job_information(job_id, walltime, memory_gb, cwd)
+        cache_job_information(job_id, walltime, memory_gb, 1, cwd)
         return
 
     prev_cwd = get_prev_cwd(cwd)
@@ -153,7 +162,8 @@ def generate_bsub_command(
     fail_reason = get_job_failure_reason(prev_job_info['job_id'])
 
     walltime, memory_gb = update_resource_requests(
-        prev_job_info['walltime'], prev_job_info['memory_gb'], multiplier,
+        prev_job_info['walltime'], prev_job_info['memory_gb'],
+        prev_job_info['attempt'] + 1, multiplier,
         cpu, fail_reason, max_walltime_hrs=max_walltime_hrs,
         max_mem=max_mem
     )
@@ -166,4 +176,4 @@ def generate_bsub_command(
         docker_script
     )
 
-    cache_job_information(job_id, walltime, memory_gb, cwd)
+    cache_job_information(job_id, walltime, memory_gb, prev_job_info['attempt'] + 1, cwd)
