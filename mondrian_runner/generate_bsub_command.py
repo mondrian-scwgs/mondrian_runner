@@ -163,7 +163,7 @@ def generate_bsub_command(
 
     walltime, memory_gb = update_resource_requests(
         prev_job_info['walltime'], prev_job_info['memory_gb'],
-        prev_job_info['attempt'] + 1, multiplier,
+        prev_job_info.get('attempt', 1) + 1, multiplier,
         cpu, fail_reason, max_walltime_hrs=max_walltime_hrs,
         max_mem=max_mem
     )
@@ -176,4 +176,4 @@ def generate_bsub_command(
         docker_script
     )
 
-    cache_job_information(job_id, walltime, memory_gb, prev_job_info['attempt'] + 1, cwd)
+    cache_job_information(job_id, walltime, memory_gb, prev_job_info.get('attempt', 1) + 1, cwd)
