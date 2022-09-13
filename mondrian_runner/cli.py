@@ -31,7 +31,6 @@ def parse_args():
 
     run = subparsers.add_parser("run")
     run.set_defaults(which='run')
-    run = add_global_args(run)
     run.add_argument(
         "--wdl_file",
         required=True,
@@ -52,6 +51,21 @@ def parse_args():
         help='server url'
     )
     run.add_argument(
+        "--server_url",
+        required=True,
+        help='server url'
+    )
+    run.add_argument(
+        "--cache_dir",
+        required=True,
+        help='server url'
+    )
+    run.add_argument(
+        "--log_level",
+        default='INFO',
+        help='server url'
+    )
+    run.add_argument(
         "--mondrian_dir",
         required=True,
         help='server url'
@@ -62,80 +76,29 @@ def parse_args():
         default=False,
         help='server url'
     )
-
-    reattach = subparsers.add_parser("reattach")
-    reattach.set_defaults(which='reattach')
-    reattach = add_global_args(reattach)
-    reattach.add_argument(
-        "--run_id",
-        help='server url'
-    )
-    reattach.add_argument(
-        "--mondrian_dir",
-        required=True,
+    run.add_argument(
+        "--try_reattach",
+        action='store_true',
+        default=False,
         help='server url'
     )
 
     abort = subparsers.add_parser("abort")
     abort.set_defaults(which='abort')
-    abort = add_global_args(abort)
+    abort.add_argument(
+        "--server_url",
+        required=True,
+        help='server url'
+    )
     abort.add_argument(
         "--run_id",
         help='server url'
     )
+    abort.add_argument(
+        "--cache_dir",
+        help='server url'
+    )
 
-    retry_run = subparsers.add_parser("retry_run")
-    retry_run.set_defaults(which='retry_run')
-    # retry_run = add_global_args(retry_run)
-    retry_run.add_argument(
-        "--cwd"
-    )
-    retry_run.add_argument(
-        "--docker_cwd"
-    )
-    retry_run.add_argument(
-        "--singularity_img",
-    )
-    retry_run.add_argument(
-        "--job_name"
-    )
-    retry_run.add_argument(
-        "--env_setup_command",
-    )
-    retry_run.add_argument(
-        "--memory_gb", type=int
-    )
-    retry_run.add_argument(
-        "--walltime"
-    )
-    retry_run.add_argument(
-        "--cores", type=int
-    )
-    retry_run.add_argument(
-        "--retries", type=int
-    )
-    retry_run.add_argument(
-        "--multiplier", type=int
-    )
-    retry_run.add_argument(
-        "--bind_mounts", nargs='*'
-    )
-    retry_run.add_argument(
-        "--lsf_extra_args"
-    )
-    retry_run.add_argument(
-        "--log_level",
-        default='INFO',
-    )
-    retry_run.add_argument(
-        "--kill_hung_jobs",
-        default=False,
-    )
-    retry_run.add_argument(
-        "--max_mem",
-        default=450,
-        type=int
-    )
 
     generate_bsub_command = subparsers.add_parser("generate_bsub_command")
     generate_bsub_command.set_defaults(which='generate_bsub_command')
@@ -200,7 +163,6 @@ def parse_args():
     check_alive.add_argument(
         "--kill_hung_jobs", default=False, action='store_true'
     )
-
 
     args = vars(parser.parse_args())
 

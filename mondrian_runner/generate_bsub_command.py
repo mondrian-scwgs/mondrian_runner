@@ -111,7 +111,7 @@ def update_resource_requests(
         walltime = update_walltime(
             walltime, multiplier, max_walltime_hrs=max_walltime_hrs
         )
-    else:
+    elif 'TERM_MEMLIMIT' in fail_reason:
         memory_gb = update_memory(
             memory_gb, cpu, multiplier, max_mem=max_mem
         )
@@ -122,7 +122,7 @@ def update_resource_requests(
 def cache_job_information(job_id, walltime, memory_gb, attempt_number, cwd):
     cache_file = os.path.join(cwd, 'execution', 'job_information.json')
     if os.path.exists(cache_file):
-        raise Exception('Cannot cache, file exists:{}'.format(cache_file))
+        print('Cannot cache, file exists:{}'.format(cache_file))
 
     with open(cache_file, 'wt') as writer:
         json.dump(

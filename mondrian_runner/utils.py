@@ -4,137 +4,40 @@ import json
 import logging
 import os
 import random
-from functools import wraps
 from subprocess import Popen, PIPE
 
 import time
-import json
-
-class Backoff(object):
-    """
-    wrapper for functions that fail but require retries until it succeeds
-    """
-
-    def __init__(self, exception_type=Exception, max_backoff=3600, backoff_time=1, randomize=False,
-                 num_retries=None, backoff="exponential", step_size=2):
-        self.func = None
-
-        if backoff not in ["exponential", "linear", "fixed"]:
-            raise Exception(
-                "Currently supports only exponential, linear and fixed backoff")
-
-        self.exception_type = exception_type
-
-        self.max_backoff = max_backoff
-        self.backoff_time = backoff_time
-
-        self.randomize = randomize
-
-        self.num_retries = num_retries
-
-        self.backoff = backoff
-
-        self.step_size = step_size
-
-        self.elapsed_time = 0
-
-    def __call__(self, func):
-        self.func = func
-
-        @wraps(func)
-        def wrapped(*args, **kwargs):
-            return self._run_with_exponential_backoff(*args, **kwargs)
-
-        return wrapped
-
-    def _run_with_exponential_backoff(self, *args, **kwargs):
-        """
-        keep running the function until we go over the
-        max wait time or num retries
-        """
-
-        retry_no = 0
-
-        while True:
-
-            if self.elapsed_time >= self.max_backoff:
-                break
-
-            if self.num_retries and retry_no > self.num_retries:
-                break
-
-            try:
-                result = self.func(*args, **kwargs)
-            except self.exception_type as exc:
-                self._update_backoff_time()
-                logging.getLogger("pypeliner.helpers").warn(
-                    "error {} caught, retrying after {} seconds".format(
-                        str(exc), self.backoff_time)
-                )
-                retry_no += 1
-                time.sleep(self.backoff_time)
-            except Exception:
-                raise
-            else:
-                return result
-
-    def _update_backoff_time(self):
-        """
-        update the backoff time
-        """
-
-        if self.backoff == "exponential":
-            self.backoff_time = self.step_size * (self.backoff_time or 1)
-
-        elif self.backoff == "linear":
-            self.backoff_time += self.step_size
-
-        if self.randomize:
-            lower_bound = int(0.9 * self.backoff_time)
-            upper_bound = int(1.1 * self.backoff_time)
-            self.backoff_time = random.randint(lower_bound, upper_bound)
-
-        if self.elapsed_time + self.backoff_time > self.max_backoff:
-            self.backoff_time = self.max_backoff - self.elapsed_time
-
-        self.elapsed_time += self.backoff_time
 
 
-def get_incrementing_filename(path):
-    """
-    avoid overwriting files. if path exists then return path
-    otherwise generate a path that doesnt exist.
-    """
+def submit_pipeline(server_url, wdl_file, input_json=None, options_json=None, imports=None):
+    logger = logging.getLogger('mondrian_runner.submit')
 
-    if not os.path.exists(path):
-        return path
+    cmd = [
+        'curl',
+        '-X', 'POST',
+        '--header', 'Accept: application/json',
+        '-v', '{}/api/workflows/v1'.format(server_url),
+        '-F', 'workflowSource=@{}'.format(wdl_file),
+    ]
 
-    i = 0
-    while os.path.exists("{}.{}".format(path, i)):
-        i += 1
+    if input_json is not None:
+        cmd += ['-F', 'workflowInputs=@{}'.format(input_json)]
 
-    return "{}.{}".format(path, i)
+    if options_json is not None:
+        cmd += ['-F', 'workflowOptions=@{}'.format(options_json)]
 
+    if imports is not None:
+        cmd += ['-F', 'workflowDependencies=@{}'.format(imports)]
 
-def init_log_file(logfile):
-    if os.path.exists(logfile):
-        newpath = get_incrementing_filename(logfile)
-        os.rename(logfile, newpath)
+    logger.info('running: {}'.format(' '.join(cmd)))
 
+    cmdout, cmderr = run_cmd(cmd)
 
-def init_file_logger(tempdir, loglevel):
-    logfile = os.path.join(tempdir, 'pipeline.log')
-    logfile = init_log_file(logfile)
+    run_id = get_run_id(cmdout)
 
-    logging.basicConfig(
-        level=logging.DEBUG,
-        filename=logfile,
-        filemode='wt',
-        format='%(name)s - %(levelname)s - %(message)s'
-    )
-    console = logging.StreamHandler()
-    console.setLevel(loglevel)
-    logging.getLogger('').addHandler(console)
+    logger.info("run_id: {}".format(run_id))
+
+    return run_id
 
 
 def init_console_logger(loglevel):
@@ -144,16 +47,33 @@ def init_console_logger(loglevel):
     )
 
 
+def get_latest_id_from_cache_dir(tempdir):
+    id_file = get_cache_file(tempdir)
 
-def get_id_from_tempdir(tempdir):
-    idfile = os.path.join(tempdir, 'run_id.json')
+    if not os.path.exists(id_file):
+        return None
 
-    with open(idfile, 'rt') as reader:
+    with open(id_file, 'rt') as reader:
         return json.load(reader)['run_id']
 
 
-def cache_run_id(run_id, outdir):
-    id_file = os.path.join(outdir, 'run_id.json')
+def get_all_ids_from_cache_dir(tempdir):
+    id_file = get_cache_file(tempdir)
+
+    with open(id_file, 'rt') as reader:
+        data = json.load(reader)
+
+    return [data['run_id']] + data['old_run_ids']
+
+
+def get_cache_file(cache_dir):
+    cache_file = os.path.join(cache_dir, 'run_data_cache.json')
+    return cache_file
+
+
+def cache_run_id(run_id, cache_dir):
+    id_file = get_cache_file(cache_dir)
+
     if os.path.exists(id_file):
         with open(id_file, 'rt') as reader:
             data = json.load(reader)
@@ -192,12 +112,6 @@ def run_cmd(cmd):
     return cmdout, cmderr
 
 
-def get_workflow_url(wf_name, version):
-    wf_url = 'https://raw.githubusercontent.com/mondrian-scwgs/mondrian/{}/mondrian/wdl/analyses/{}.wdl'.format(
-        version, wf_name)
-    return wf_url
-
-
 def get_run_id(stdout):
     try:
         run_id = json.loads(stdout)['id']
@@ -207,10 +121,9 @@ def get_run_id(stdout):
     return run_id
 
 
-def check_status(server_url, run_id, logger):
+def check_status(server_url, run_id, num_retries=0):
     i = 0
-    while i < 5:
-
+    while i <= num_retries:
         cmd = ['curl', '-X', 'GET', "http://{}/api/workflows/v1/query?id={}".format(server_url, run_id)]
 
         cmdout, cmderr = run_cmd(cmd)
@@ -218,13 +131,13 @@ def check_status(server_url, run_id, logger):
         cmdout = json.loads(cmdout)
 
         if 'results' not in cmdout:
-            logger.warning(f'expected results in response, received {cmdout}')
+            logging.getLogger('mondrian_runner.poll').warning(f'expected results in response, received {cmdout}')
             i += 1
             time.sleep(20)
             continue
 
         if not len(cmdout['results']) == 1:
-            logger.warning('expected 1 result. {}'.format(cmdout['results']))
+            logging.getLogger('mondrian_runner.poll').warning('expected 1 result. {}'.format(cmdout['results']))
             i += 1
             time.sleep(20)
             continue
@@ -232,27 +145,6 @@ def check_status(server_url, run_id, logger):
         status = cmdout['results'][0]['status'].lower()
 
         return status
-
-
-@Backoff(max_backoff=900, randomize=True)
-def wait(server_url, run_id, log_file, sleep_time=30):
-    logger = logging.getLogger('mondrian_runner_waiter')
-
-    while True:
-        time.sleep(sleep_time)
-
-        if os.path.exists(log_file):
-            follow_log = follow(
-                log_file, server_url, run_id, logger
-            )
-            for line in follow_log:
-                logger.info(line)
-
-        status = check_status(server_url, run_id, logger)
-        if status not in ['running', 'submitted']:
-            break
-
-    return check_status(server_url, run_id, logger)
 
 
 def makedirs(directory):
@@ -268,30 +160,6 @@ def makedirs(directory):
             raise
 
 
-def follow(logfile, server_url, run_id, logger, sleep_time=10):
-    '''
-    generator function that yields new lines in a file
-    '''
-
-    logreader = open(logfile, 'rt')
-
-    logreader.seek(0, os.SEEK_END)
-    while True:
-
-        if not os.path.exists(logfile):
-            break
-
-        line = logreader.readline()
-        if not line:
-            status = check_status(server_url, run_id, logger)
-            if status not in ['running', 'submitted']:
-                break
-            time.sleep(sleep_time)
-            continue
-
-        yield line
-
-
 def get_wf_name(execution_dir, run_id):
     paths = glob.glob('{}/*/{}'.format(execution_dir, run_id))
 
@@ -304,3 +172,82 @@ def get_wf_name(execution_dir, run_id):
     paths = paths.replace('/', '')
 
     return paths
+
+
+def get_wf_name_from_input_json(json_file):
+    with open(json_file, 'rt') as reader:
+        data = json.load(reader)
+
+    keys = data.keys()
+    keys = [v.split('.')[0] for v in keys]
+    keys = sorted(set(keys))
+
+    assert len(keys) == 1
+
+    return keys[0]
+
+
+class PipelineLockedError(Exception):
+    pass
+
+
+class PipelineLock(object):
+    def __init__(self, cache_dir):
+        self.lock = os.path.join(cache_dir, '_lock')
+
+    def __enter__(self):
+        if os.path.exists(self.lock):
+            raise PipelineLockedError(f'pipeline already running. remove {self.lock} to override')
+
+        try:
+            os.makedirs(self.lock)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                raise PipelineLockedError(f'Pipeline already running, remove {self.lock} to override')
+            else:
+                raise
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.rmdir(self.lock)
+
+
+def _simple_wait_and_log(server_url, run_id, workflow_log_dir, sleep_time=30):
+    log_file = os.path.join(workflow_log_dir, 'workflow.{}.log'.format(run_id))
+    logger = logging.getLogger('mondrian_runner.poll')
+
+    if not os.path.exists(log_file):
+        return check_status(server_url, run_id, num_retries=4)
+
+    logreader = open(log_file, 'rt')
+    logreader.seek(0, os.SEEK_END)
+
+    status = None
+    while os.path.exists(log_file) or status in ['running', 'submitted']:
+        line = logreader.readline()
+        if line:
+            logger.info(line.strip())
+        else:
+            status = check_status(server_url, run_id, num_retries=4)
+            time.sleep(sleep_time)
+
+    return check_status(server_url, run_id, num_retries=4)
+
+
+def wait(server_url, run_id, workflow_log_dir, sleep_time=30):
+    x = 0
+    num_retries = 5
+    backoff_in_seconds = 10
+
+    while True:
+        try:
+            status = _simple_wait_and_log(server_url, run_id, workflow_log_dir, sleep_time=sleep_time)
+            if status not in ['running', 'submitted']:
+                return status
+        except:
+            if x == num_retries - 1:
+                raise
+            else:
+                sleep = (backoff_in_seconds * 2 ** x + random.uniform(0, 1))
+                logging.getLogger('mondrian_runner.poll').info(f'Exception caught, retrying after {sleep} seconds')
+                time.sleep(sleep)
+                x += 1

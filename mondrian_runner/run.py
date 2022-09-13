@@ -1,59 +1,78 @@
 import logging
 import os
-import shutil
 
 import mondrian_runner.utils as utils
 from mondrian_runner.debug import debug
 
-def submit_pipeline(server_url, wdl_file, input_json, options_json, imports=None):
-    logger = logging.getLogger('mondrian_runner.submit')
 
-    cmd = [
-        'curl',
-        '-X', 'POST',
-        '--header', 'Accept: application/json',
-        '-v', '{}/api/workflows/v1'.format(server_url),
-        '-F', 'workflowSource=@{}'.format(wdl_file),
-        '-F', 'workflowInputs=@{}'.format(input_json),
-        '-F', 'workflowOptions=@{}'.format(options_json),
-    ]
+def write_delete_wdl(wdl_path, dirs_to_delete):
+    dirs_to_delete = ' '.join(dirs_to_delete)
+    wdl_file_string = 'task remove_intermediate_dir{\ncommand{\n'
+    wdl_file_string += 'rm -rf {} \n'.format(dirs_to_delete) + '}\n'
+    wdl_file_string += 'runtime { \n memory: "4G" \n cpu: 1 \n walltime: "24:00"\n}\n}\n'
+    wdl_file_string += 'workflow remove_workflow{\ncall remove_intermediate_dir\n}'
 
-    if imports is not None:
-        cmd += ['-F', 'workflowDependencies=@{}'.format(imports)]
+    with open(wdl_path, 'wt') as writer:
+        writer.write(wdl_file_string)
 
-    logger.info('running: {}'.format(' '.join(cmd)))
 
-    cmdout, cmderr = utils.run_cmd(cmd)
+def delete_intermediates_workflow(
+        server_url, cache_dir, delete_cache_dir, wf_name, workflow_log_dir, execution_dir
+):
+    run_ids = utils.get_all_ids_from_cache_dir(cache_dir)
+    run_dirs = [os.path.join(execution_dir, wf_name, run_id) for run_id in run_ids]
 
-    run_id = utils.get_run_id(cmdout)
+    wdl_file = os.path.join(delete_cache_dir, 'delete_intermediates.wdl')
+    write_delete_wdl(wdl_file, run_dirs)
 
-    logger.info("run_id: {}".format(run_id))
+    run_id = utils.submit_pipeline(server_url, wdl_file)
 
-    return run_id
+    utils.cache_run_id(run_id, delete_cache_dir)
+
+    logfile = os.path.join(workflow_log_dir, 'workflow.{}.log'.format(run_id))
+    status = utils.wait(server_url, run_id, logfile)
+
+    logging.getLogger('mondrian_runner.cleanup').warning(
+        'cleanup status: {}'.format(status)
+    )
 
 
 def runner(
         server_url, pipeline_wdl, input_json, options_json,
-        outdir, mondrian_dir,  imports=None, delete_intermediates=False
+        cache_dir, mondrian_dir, imports=None, delete_intermediates=False,
+        try_reattach=None
 ):
-    workflow_log_dir = os.path.join(mondrian_dir, 'cromwell-workflow-logs')
+    with utils.PipelineLock(cache_dir):
 
-    run_id = submit_pipeline(server_url, pipeline_wdl, input_json, options_json, imports=imports)
+        wf_name = utils.get_wf_name_from_input_json(input_json)
 
-    utils.cache_run_id(run_id, outdir)
-
-    logfile = os.path.join(workflow_log_dir, 'workflow.{}.log'.format(run_id))
-
-    status = utils.wait(server_url, run_id, logfile)
-
-    if not status == 'succeeded':
         execution_dir = os.path.join(mondrian_dir, 'cromwell-executions')
-        wf_name = utils.get_wf_name(execution_dir, run_id)
-        print('detected {} status, extracting errors ...' .format(status))
-        debug(execution_dir, wf_name, run_id)
-    else:
-        if delete_intermediates:
-            execution_dir = os.path.join(mondrian_dir, 'cromwell-executions')
-            wf_name = utils.get_wf_name(execution_dir, run_id)
-            run_dir = os.path.join(execution_dir, wf_name, run_id)
-            shutil.rmtree(run_dir)
+        workflow_log_dir = os.path.join(mondrian_dir, 'cromwell-workflow-logs')
+
+        utils.makedirs(cache_dir)
+
+        run_id = utils.get_latest_id_from_cache_dir(cache_dir)
+
+        status = None
+        if run_id is not None:
+            status = utils.check_status(server_url, run_id)
+
+        if run_id is None or try_reattach is False or status not in ['running', 'submitted', 'succeeded']:
+            run_id = utils.submit_pipeline(
+                server_url, pipeline_wdl, input_json=input_json, options_json=options_json,
+                imports=imports
+            )
+            utils.cache_run_id(run_id, cache_dir)
+
+        status = utils.wait(server_url, run_id, workflow_log_dir)
+
+        if status == 'succeeded':
+            if delete_intermediates:
+                delete_cache_dir = os.path.join(cache_dir, 'remove_intermediates')
+                utils.makedirs(delete_cache_dir)
+                delete_intermediates_workflow(
+                    server_url, cache_dir, delete_cache_dir, wf_name, workflow_log_dir, execution_dir
+                )
+            logging.getLogger('mondrian_runner.poll').info('Successfully completed')
+        else:
+            debug(execution_dir, wf_name, run_id)

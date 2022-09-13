@@ -21,12 +21,15 @@ def _get_working_dir(job_id):
 def create_rc_file_on_fail(job_id):
     working_dir = _get_working_dir(job_id)
     rcfile = os.path.join(working_dir, 'execution', 'rc')
+    rcfile_tmp = os.path.join(working_dir, 'execution', 'rc.tmp')
 
-    if os.path.exists(rcfile):
+    if os.path.exists(rcfile) or os.path.exists(rcfile_tmp):
         return
 
-    with open(rcfile, 'wt') as writer:
+    with open(rcfile_tmp, 'wt') as writer:
         writer.write('-1')
+
+    os.rename(rcfile_tmp, rcfile)
 
 
 def kill_job(job_id):
@@ -114,7 +117,7 @@ def _is_mem_usage_high(job_id):
     cpu = int(cpu)
     requested_mem = requested_mem * cpu
 
-    if max_mem >= (requested_mem -1):
+    if max_mem >= (requested_mem - 1):
         return True
 
 
