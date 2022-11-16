@@ -111,7 +111,6 @@ def parse_args():
     )
     local_run.add_argument(
         "--cromwell_jar",
-        required=True,
         help='server url'
     )
 

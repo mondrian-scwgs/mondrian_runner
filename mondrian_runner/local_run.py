@@ -32,11 +32,7 @@ def submit_pipeline(
     if imports:
         cmd += ['--imports', imports]
 
-    stdout = utils.run_cmd_interactive(cmd)
-
-    with stdout:
-        for line in iter(stdout.readline, b""):
-            print(line.rstrip())
+    utils.run_cmd_interactive(cmd)
 
 
 def generate_run_config(output_dir):
