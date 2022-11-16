@@ -73,7 +73,7 @@ def check_for_success(execution_dir, successful_return_codes=('0',)):
     if rc_code_attempt_1 in successful_return_codes:
         return True
 
-    retries = [os.path.join(execution_dir, v) for v in os.listdir(execution_dir) if v.startswith('attempt-')]
+    retries = [os.path.join(execution_dir,  v, 'execution') for v in os.listdir(execution_dir) if v.startswith('attempt-')]
     retry_rc = [get_rc_code(v) for v in retries]
 
     for val in retry_rc:
@@ -94,7 +94,7 @@ def get_error(execution_dir, successful_return_codes=('0',)):
             continue
 
         attempt_num = int(v[len('attempt-'):])
-        attempt_dir = os.path.join(execution_dir, v)
+        attempt_dir = os.path.join(execution_dir, v, 'execution')
         attempt_rc = get_rc_code(attempt_dir)
 
         data[attempt_num] = (attempt_dir, attempt_rc)

@@ -9,7 +9,7 @@ def abort(server_url, cache_dir, run_id):
         raise Exception('Please specify either cache_dir or run_id, not both')
 
     if run_id is None:
-        run_id = utils.get_latest_id_from_tempdir(cache_dir)
+        run_id = utils.get_latest_id_from_cache_dir(cache_dir)
 
     cmd = ['curl', '-X', 'POST', '{}/api/workflows/v1/{}/abort'.format(server_url, run_id)]
 

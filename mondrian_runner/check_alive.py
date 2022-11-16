@@ -23,7 +23,11 @@ def create_rc_file_on_fail(job_id):
     rcfile = os.path.join(working_dir, 'execution', 'rc')
     rcfile_tmp = os.path.join(working_dir, 'execution', 'rc.tmp')
 
-    if os.path.exists(rcfile) or os.path.exists(rcfile_tmp):
+    if os.path.exists(rcfile):
+        return
+
+    if os.path.exists(rcfile_tmp):
+        os.rename(rcfile_tmp, rcfile)
         return
 
     with open(rcfile_tmp, 'wt') as writer:

@@ -70,6 +70,8 @@ def get_job_failure_reason(job_id):
     stdout = subprocess.check_output(cmd).decode()
     stdout = json.loads(stdout)
     assert stdout['JOBS'] == 1
+    if 'ERROR' in stdout['RECORDS'][0]:
+        return 'UNKNOWN'
     reason = stdout['RECORDS'][0]['EXIT_REASON']
     return reason
 
@@ -99,8 +101,9 @@ def update_resource_requests(
         walltime, memory_gb, attempt, multiplier, cpu, fail_reason,
         max_mem=None, max_walltime_hrs=None
 ):
+
     # just increase both on second attempt to be conservative
-    if attempt == 2:
+    if attempt == 2 or fail_reason == 'UNKNOWN':
         walltime = update_walltime(
             walltime, multiplier, max_walltime_hrs=max_walltime_hrs
         )
@@ -111,7 +114,7 @@ def update_resource_requests(
         walltime = update_walltime(
             walltime, multiplier, max_walltime_hrs=max_walltime_hrs
         )
-    elif 'TERM_MEMLIMIT' in fail_reason:
+    else:
         memory_gb = update_memory(
             memory_gb, cpu, multiplier, max_mem=max_mem
         )

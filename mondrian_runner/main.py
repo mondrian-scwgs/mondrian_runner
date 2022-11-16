@@ -31,7 +31,6 @@ def main():
             try_reattach=args['try_reattach']
         )
     elif args["which"] == "abort":
-        utils.init_console_logger(args['log_level'])
-        abort(args['server_url'], args['outdir'], args['run_id'])
+        abort(args['server_url'], args['cache_dir'], args['run_id'])
     else:
         raise Exception('unknown parser option: {} '.format(args['which']))
