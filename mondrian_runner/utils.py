@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import random
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, STDOUT
 
 import time
 
@@ -121,13 +121,11 @@ def run_cmd_interactive(cmd):
     :param output: filepath for stdout
     :type output: str
     """
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    p = Popen(cmd, stdout=PIPE, stderr=STDOUT,  bufsize=1, universal_newlines=True)
+
 
     for stdout_line in iter(p.stdout.readline, ""):
         yield stdout_line
-
-    for stderr_line in iter(p.stderr.readline, ""):
-        yield stderr_line
 
     p.stdout.close()
     retc = p.wait()

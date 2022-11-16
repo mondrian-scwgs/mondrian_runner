@@ -35,6 +35,7 @@ def main():
         local_runner(
             args['wdl_file'], args['input_json'],
             args['options_json'], args['cache_dir'], imports=args['imports'],
+            cromwell_jar=args['cromwell_jar']
         )
     elif args["which"] == "abort":
         abort(args['server_url'], args['cache_dir'], args['run_id'])

@@ -109,6 +109,11 @@ def parse_args():
         required=True,
         help='server url'
     )
+    local_run.add_argument(
+        "--cromwell_jar",
+        required=True,
+        help='server url'
+    )
 
     abort = subparsers.add_parser("abort")
     abort.set_defaults(which='abort')

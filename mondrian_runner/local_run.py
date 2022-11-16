@@ -11,9 +11,9 @@ def pull_cromwell_jar(download_dir):
 
     stdout = utils.run_cmd_interactive(cmd)
 
-    for line in stdout:
-        print(line)
-
+    with stdout:
+        for line in iter(stdout.readline, b""):
+            print(line.rstrip())
 
     return os.path.join(download_dir, 'cromwell.jar')
 
@@ -37,8 +37,9 @@ def submit_pipeline(
 
     stdout = utils.run_cmd_interactive(cmd)
 
-    for line in stdout:
-        print(line)
+    with stdout:
+        for line in iter(stdout.readline, b""):
+            print(line.rstrip())
 
 
 def generate_run_config(output_dir):
