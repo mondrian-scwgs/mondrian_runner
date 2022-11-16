@@ -125,7 +125,9 @@ def run_cmd_interactive(cmd):
 
     with p.stdout:
         for line in iter(p.stdout.readline, b""):
-            print(line.rstrip(), end='')
+            print(line)
+            if not line:
+                break
 
     retc = p.wait()
 
