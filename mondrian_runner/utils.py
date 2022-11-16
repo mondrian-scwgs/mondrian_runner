@@ -244,8 +244,6 @@ def wait(server_url, run_id, workflow_log_dir, sleep_time=30):
             if status not in ['running', 'submitted']:
                 return status
         except KeyboardInterrupt:
-            raise
-        except:
             if x == num_retries - 1:
                 raise
             else:
