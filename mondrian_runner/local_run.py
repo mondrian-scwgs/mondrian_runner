@@ -9,11 +9,8 @@ def pull_cromwell_jar(download_dir):
     cmd = ['wget', 'https://github.com/broadinstitute/cromwell/releases/download/84/cromwell-84.jar', '-O',
            os.path.join(download_dir, 'cromwell.jar')]
 
-    stdout = utils.run_cmd_interactive(cmd)
+    utils.run_cmd_interactive(cmd)
 
-    with stdout:
-        for line in iter(stdout.readline, b""):
-            print(line.rstrip())
 
     return os.path.join(download_dir, 'cromwell.jar')
 

@@ -123,11 +123,10 @@ def run_cmd_interactive(cmd):
     """
     p = Popen(cmd, stdout=PIPE, stderr=STDOUT,  bufsize=1, universal_newlines=True)
 
+    with p.stdout:
+        for line in iter(p.stdout.readline, b""):
+            print(line.rstrip())
 
-    for stdout_line in iter(p.stdout.readline, ""):
-        yield stdout_line
-
-    p.stdout.close()
     retc = p.wait()
 
     if retc:
