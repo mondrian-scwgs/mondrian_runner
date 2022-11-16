@@ -6,10 +6,14 @@ import pkg_resources
 
 
 def pull_cromwell_jar(download_dir):
-    cmd = ['wget', 'https://github.com/broadinstitute/cromwell/releases/download/84/cromwell-84.jar', '-o',
+    cmd = ['wget', 'https://github.com/broadinstitute/cromwell/releases/download/84/cromwell-84.jar', '-O',
            os.path.join(download_dir, 'cromwell.jar')]
 
-    utils.run_cmd_interactive(cmd)
+    stdout = utils.run_cmd_interactive(cmd)
+
+    for line in stdout:
+        print(line)
+
 
     return os.path.join(download_dir, 'cromwell.jar')
 
@@ -31,7 +35,10 @@ def submit_pipeline(
     if imports:
         cmd += ['--imports', imports]
 
-    utils.run_cmd_interactive(cmd)
+    stdout = utils.run_cmd_interactive(cmd)
+
+    for line in stdout:
+        print(line)
 
 
 def generate_run_config(output_dir):

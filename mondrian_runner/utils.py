@@ -126,6 +126,9 @@ def run_cmd_interactive(cmd):
     for stdout_line in iter(p.stdout.readline, ""):
         yield stdout_line
 
+    for stderr_line in iter(p.stderr.readline, ""):
+        yield stderr_line
+
     p.stdout.close()
     retc = p.wait()
 
