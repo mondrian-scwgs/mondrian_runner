@@ -4,6 +4,7 @@ from mondrian_runner.check_alive import check_alive
 from mondrian_runner.cli import parse_args
 from mondrian_runner.generate_bsub_command import generate_bsub_command
 from mondrian_runner.run import runner
+from mondrian_runner.local_run import local_runner
 
 
 def main():
@@ -29,6 +30,11 @@ def main():
             imports=args['imports'],
             delete_intermediates=args['delete_intermediates'],
             try_reattach=args['try_reattach']
+        )
+    elif args["which"] == "local_run":
+        local_runner(
+            args['wdl_file'], args['input_json'],
+            args['options_json'], args['cache_dir'], imports=args['imports'],
         )
     elif args["which"] == "abort":
         abort(args['server_url'], args['cache_dir'], args['run_id'])

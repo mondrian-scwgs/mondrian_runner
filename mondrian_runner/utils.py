@@ -112,6 +112,27 @@ def run_cmd(cmd):
     return cmdout, cmderr
 
 
+def run_cmd_interactive(cmd):
+    """
+    run command with subprocess,
+    write stdout to output file if set
+    :param cmd: command args
+    :type cmd: list of str
+    :param output: filepath for stdout
+    :type output: str
+    """
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+
+    for stdout_line in iter(p.stdout.readline, ""):
+        yield stdout_line
+
+    p.stdout.close()
+    retc = p.wait()
+
+    if retc:
+        raise Exception(f"command {cmd} failed.")
+
+
 def get_run_id(stdout):
     try:
         run_id = json.loads(stdout)['id']

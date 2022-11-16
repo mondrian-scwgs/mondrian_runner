@@ -83,6 +83,33 @@ def parse_args():
         help='server url'
     )
 
+    local_run = subparsers.add_parser("local_run")
+    local_run.set_defaults(which='local_run')
+    local_run.add_argument(
+        "--wdl_file",
+        required=True,
+        help='server url'
+    )
+    local_run.add_argument(
+        "--input_json",
+        required=True,
+        help='server url'
+    )
+    local_run.add_argument(
+        "--options_json",
+        required=True,
+        help='server url'
+    )
+    local_run.add_argument(
+        "--imports",
+        help='server url'
+    )
+    local_run.add_argument(
+        "--cache_dir",
+        required=True,
+        help='server url'
+    )
+
     abort = subparsers.add_parser("abort")
     abort.set_defaults(which='abort')
     abort.add_argument(
@@ -98,7 +125,6 @@ def parse_args():
         "--cache_dir",
         help='server url'
     )
-
 
     generate_bsub_command = subparsers.add_parser("generate_bsub_command")
     generate_bsub_command.set_defaults(which='generate_bsub_command')
