@@ -123,16 +123,23 @@ def run_cmd_interactive(cmd):
     """
     p = Popen(cmd, stdout=PIPE, stderr=STDOUT,  bufsize=1, universal_newlines=True)
 
-    with p.stdout:
-        for line in iter(p.stdout.readline, b""):
-            print(line)
-            if not line:
-                break
+    pid = p.pid
 
-    retc = p.wait()
 
-    if retc:
-        raise Exception(f"command {cmd} failed.")
+    try:
+        with p.stdout:
+            for line in iter(p.stdout.readline, b""):
+                print(line)
+                if not line:
+                    break
+
+        retc = p.wait()
+
+        if retc:
+            raise Exception(f"command {cmd} failed.")
+    except KeyboardInterrupt:
+        # in case the python is killed, also kill cromwell
+        run_cmd(['kill', '-9', pid])
 
 
 def get_run_id(stdout):
