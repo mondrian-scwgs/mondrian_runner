@@ -10,11 +10,8 @@ def submit_job(
         singularity_img, job_shell,
         docker_script
 ):
-    cmd = [
-        "bsub", "-n", cpu, "-W", walltime,
-        "-R", "'rusage[mem={}]span[ptile={}]'".format(memory_gb, cpu),
-        "-J", job_name, "-cwd", cwd, "-o", out, "-e", err
-    ]
+    cmd = ["sbatch", "-J", job_name, '-D', cwd, "-o", out, "-e", err,
+           "-c", cpu, "-t", walltime, "-p", "componc", f"--mem={memory_gb}G"]
 
     if lsf_extra_args is not None:
         cmd.extend(lsf_extra_args.split())

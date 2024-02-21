@@ -179,7 +179,7 @@ def parse_args():
         type=int
     )
     generate_bsub_command.add_argument(
-        "--bind_mounts", nargs='*', default=['/work', '/juno/work']
+        "--bind_mounts", nargs='*', default=['/data1', '/scratch', '/usersoftware']
     )
     generate_bsub_command.add_argument(
         "--lsf_extra_args",
