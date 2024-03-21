@@ -10,25 +10,37 @@ def submit_job(
         singularity_img, job_shell,
         docker_script
 ):
-    cmd = ["sbatch", "-J", job_name, '-D', cwd, "-o", out, "-e", err,
-           "-c", cpu, "-t", walltime, "-p", "componc", f"--mem={memory_gb}G"]
+    walltime += ":00"
+
+    command_path = os.path.join(os.path.dirname(out), 'command.sh')
+    with open(command_path, "wt") as writer:
+        cmd = [
+            "singularity", "exec", "--containall", "--bind",
+            "{}:{}".format(cwd, docker_cwd)
+        ]
+        for mount in bind_mounts:
+            cmd.extend(['--bind', mount])
+
+        cmd += [
+            singularity_img, job_shell, docker_script
+        ]
+
+        cmd = " ".join([str(v) for v in cmd])
+        writer.write(cmd + "\n")
+
+    subprocess.check_output(['chmod', '777', command_path])
+
+    cmd = [
+        "sbatch", "-J", job_name, '-D', cwd, "-o", out, "-e", err,
+        "-c", cpu, "-t", walltime, "-p", "componc", f"--mem={memory_gb}G"
+    ]
 
     if lsf_extra_args is not None:
         cmd.extend(lsf_extra_args.split())
 
-    cmd += [
-        "--wrap", "singularity", "exec", "--containall", "--bind",
-        "{}:{}".format(cwd, docker_cwd)
-    ]
-
-    for mount in bind_mounts:
-        cmd.extend(['--bind', mount])
-
-    cmd += [
-        singularity_img, job_shell, docker_script
-    ]
-
+    cmd += ["--wrap", command_path]
     cmd = [str(v) for v in cmd]
+    print(" ".join(cmd))
     stdout = subprocess.check_output(cmd).decode()
     print(stdout)
 
@@ -58,7 +70,7 @@ def get_prev_cwd(cwd):
 
 
 def find_job_id(stdout):
-    jobid = stdout.split('<')[1].split('>')[0]
+    jobid = stdout.replace('Submitted batch job', '')
     return jobid
 
 
@@ -98,7 +110,6 @@ def update_resource_requests(
         walltime, memory_gb, attempt, multiplier, cpu, fail_reason,
         max_mem=None, max_walltime_hrs=None
 ):
-
     # just increase both on second attempt to be conservative
     if attempt == 2 or fail_reason == 'UNKNOWN':
         walltime = update_walltime(

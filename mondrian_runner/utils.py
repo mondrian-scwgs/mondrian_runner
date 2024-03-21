@@ -97,6 +97,8 @@ def run_cmd(cmd):
     :param output: filepath for stdout
     :type output: str
     """
+    print(" ".join([str(v) for v in cmd]))
+
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
 
     cmdout, cmderr = p.communicate()
